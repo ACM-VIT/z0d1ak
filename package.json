@@ -26,7 +26,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^0.40.0",
+    "drizzle-orm": "^0.45.1",
     "framer-motion": "^12.4.10",
     "lucide-react": "^0.477.0",
     "nanoid": "^5.1.2",
@@ -54,7 +54,7 @@
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
-    "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "^0.31.8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
