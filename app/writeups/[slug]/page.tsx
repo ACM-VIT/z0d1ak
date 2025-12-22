@@ -250,9 +250,9 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                     </a>
                   ),
                   img: ({ ...props }) => (
-                    <div className="my-6 rounded-lg overflow-hidden border border-primary/30 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+                    <span className="block my-6 rounded-lg overflow-hidden border border-primary/30 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
                       <img className="max-w-full h-auto rounded-lg" {...props} />
-                    </div>
+                    </span>
                   ),
                   code({ inline, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || "")
