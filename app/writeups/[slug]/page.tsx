@@ -366,7 +366,26 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                             <h3 className="text-lg font-medium mb-2 group-hover:text-primary transition-colors duration-300">
                               {relatedPost.title}
                             </h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">{relatedPost.excerpt}</p>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span>{relatedPost.authorName || "Unknown"}</span>
+                              </div>
+                              <div className="h-1 w-1 rounded-full bg-primary/50" />
+                              <div className="flex items-center gap-1">
+                                <Shield className="h-3 w-3" />
+                                <span>{relatedPost.categoryName || "Uncategorized"}</span>
+                              </div>
+                            </div>
+                            {relatedPost.tags && relatedPost.tags.length > 0 ? (
+                              <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                                <Tag className="h-3 w-3" />
+                                <span>
+                                  {relatedPost.tags.slice(0, 3).join(", ")}
+                                  {relatedPost.tags.length > 3 ? ` +${relatedPost.tags.length - 3}` : ""}
+                                </span>
+                              </div>
+                            ) : null}
                             <div className="mt-3 text-xs text-primary font-mono opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               cat writeup.md
                             </div>

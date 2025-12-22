@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts } from "@/drizzle/schema";
+import { posts, users, categories } from "@/drizzle/schema";
 import { eq, not, and, desc } from "drizzle-orm";
 import { getTagsForPosts } from "@/app/actions/getTagsForPosts";
 
@@ -11,10 +11,13 @@ export async function getRelatedPosts(currentPostId: string, categoryId: string,
       id: posts.id,
       title: posts.title,
       slug: posts.slug,
-      excerpt: posts.excerpt,
+      authorName: users.name,
+      categoryName: categories.name,
       createdAt: posts.createdAt,
     })
     .from(posts)
+    .leftJoin(users, eq(posts.authorId, users.id))
+    .leftJoin(categories, eq(posts.categoryId, categories.id))
     .where(
       and(
         eq(posts.categoryId, categoryId),
