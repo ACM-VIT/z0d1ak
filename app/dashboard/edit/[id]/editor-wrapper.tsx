@@ -8,20 +8,35 @@ function EditorWrapper({ post }: { post: any }) {
   const storageKey = `ctf-writeup-${post.id}`;
 
   useEffect(() => {
-    if (!localStorage.getItem(storageKey)) {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          title: post.title,
-          content: post.content,
-          solveScript: post.solveScript || "",
-          excerpt: post.excerpt,
-          isDraft: post.isDraft,
-          category: post.categoryId,
-          competitionId: post.competitionId || "",
-          tags: post.tags || [],
-        })
-      );
+    const basePayload = {
+      title: post.title,
+      content: post.content,
+      solveScript: post.solveScript || "",
+      excerpt: post.excerpt,
+      isDraft: post.isDraft,
+      category: post.categoryId,
+      competitionId: post.competitionId || "",
+      tags: post.tags || [],
+    };
+
+    const existing = localStorage.getItem(storageKey);
+    if (existing) {
+      try {
+        const parsed = JSON.parse(existing);
+        const merged = {
+          ...basePayload,
+          ...parsed,
+        };
+
+        if (!merged.category) merged.category = basePayload.category;
+        if (!merged.competitionId) merged.competitionId = basePayload.competitionId;
+
+        localStorage.setItem(storageKey, JSON.stringify(merged));
+      } catch (error) {
+        localStorage.setItem(storageKey, JSON.stringify(basePayload));
+      }
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(basePayload));
     }
     setIsReady(true);
   }, [post, storageKey]);
