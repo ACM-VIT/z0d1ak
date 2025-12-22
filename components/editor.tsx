@@ -305,6 +305,7 @@ export default function Editor({ postId }: EditorProps) {
   const [viewMode, setViewMode] = useState<"write" | "preview" | "split">("write")
   const [error, setError] = useState("")
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [categoriesList, setCategoriesList] = useState<Category[]>([])
@@ -319,6 +320,8 @@ export default function Editor({ postId }: EditorProps) {
     : session && session.user && session.user.id
       ? `ctf-writeup-draft-${session.user.id}`
       : "ctf-writeup-draft"
+
+  const legacyEditDraftKey = postId ? `ctf-writeup-draft-${postId}` : null
 
   // Update time string every second
   useEffect(() => {
@@ -392,7 +395,8 @@ export default function Editor({ postId }: EditorProps) {
   }, [viewMode, isEditorScrolling, isPreviewScrolling])
 
   useEffect(() => {
-    const savedWriteup = localStorage.getItem(storageKey)
+    const savedWriteup =
+      localStorage.getItem(storageKey) || (legacyEditDraftKey ? localStorage.getItem(legacyEditDraftKey) : null)
     if (savedWriteup) {
       try {
         const parsed = JSON.parse(savedWriteup)
@@ -404,11 +408,16 @@ export default function Editor({ postId }: EditorProps) {
         setTags(parsed.tags ? (Array.isArray(parsed.tags) ? parsed.tags.join(", ") : parsed.tags) : "")
         setLastSaved(parsed.savedAt ? new Date(parsed.savedAt) : null)
         setIsDraft(parsed.isDraft)
+
+        // If we loaded from a legacy key, migrate it to the canonical key.
+        if (legacyEditDraftKey && localStorage.getItem(storageKey) == null) {
+          localStorage.setItem(storageKey, savedWriteup)
+        }
       } catch (e) {
         console.error("Failed to parse saved writeup", e)
       }
     }
-  }, [storageKey])
+  }, [storageKey, legacyEditDraftKey])
 
   useEffect(() => {
     if (!autoSaveEnabled) return
@@ -498,6 +507,8 @@ export default function Editor({ postId }: EditorProps) {
   const handleSubmit = async (e: React.FormEvent, saveAsDraft = false) => {
     e.preventDefault()
 
+    if (isSaving) return
+
     if (!title.trim() || !content.trim() || !category) {
       setError("Please fill in all required fields including a valid category.")
       toast({
@@ -513,6 +524,7 @@ export default function Editor({ postId }: EditorProps) {
       return
     }
     try {
+      setIsSaving(true)
       const tagsArray = tags
         .split(",")
         .map((tag) => tag.trim())
@@ -558,10 +570,15 @@ export default function Editor({ postId }: EditorProps) {
       }
 
       localStorage.removeItem(storageKey)
+      if (legacyEditDraftKey) localStorage.removeItem(legacyEditDraftKey)
 
       toast({
-        title: saveAsDraft ? "Draft saved" : "Writeup published",
-        description: saveAsDraft ? "Your draft has been saved." : "Your writeup is now live",
+        title: saveAsDraft ? "Draft saved" : postId ? "Writeup updated" : "Writeup published",
+        description: saveAsDraft
+          ? "Your draft has been saved."
+          : postId
+            ? "Your changes have been saved."
+            : "Your writeup is now live",
         className: "bg-primary/10 border-primary/30 text-white",
       })
 
@@ -573,6 +590,8 @@ export default function Editor({ postId }: EditorProps) {
         description: err.message || "Failed to save writeup",
         variant: "destructive",
       })
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -960,15 +979,21 @@ export default function Editor({ postId }: EditorProps) {
                   type="submit"
                   variant="default"
                   className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={isSaving}
                 >
-                  <Save className="h-4 w-4" />
-                  {postId ? "Update Writeup" : "Publish Writeup"}
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {isSaving ? "Saving..." : postId ? "Update Writeup" : "Publish Writeup"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   className="gap-2 border-primary/30 text-primary hover:bg-primary/10"
                   onClick={(e) => handleSubmit(e, true)}
+                  disabled={isSaving}
                 >
                   <Clock className="h-4 w-4" />
                   Save as Draft
@@ -979,6 +1004,7 @@ export default function Editor({ postId }: EditorProps) {
                   variant="outline"
                   className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10"
                   onClick={clearDraft}
+                  disabled={isSaving}
                 >
                   <Trash2 className="h-4 w-4" />
                   Clear Draft

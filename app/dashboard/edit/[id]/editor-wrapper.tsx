@@ -5,7 +5,7 @@ import Editor from "@/components/editor";
 
 function EditorWrapper({ post }: { post: any }) {
   const [isReady, setIsReady] = useState(false);
-  const storageKey = post.isDraft ? `ctf-writeup-draft-${post.id}` : `ctf-writeup-${post.id}`;
+  const storageKey = `ctf-writeup-${post.id}`;
 
   useEffect(() => {
     if (!localStorage.getItem(storageKey)) {
