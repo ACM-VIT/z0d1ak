@@ -20,6 +20,9 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
 import { fetchAllPosts, type FetchPostsParams } from "@/app/actions/fetchAllPosts"
 import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
 
@@ -151,6 +154,8 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
 
                           <div className="line-clamp-2 text-muted-foreground mb-4">
                             <ReactMarkdown
+                              remarkPlugins={[remarkGfm, remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
                               components={{
                                 h1: ({ node, ...props }) => <div {...props} />,
                                 h2: ({ node, ...props }) => <div {...props} />,

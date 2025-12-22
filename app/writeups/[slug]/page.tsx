@@ -12,6 +12,8 @@ import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
 
@@ -214,7 +216,8 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/0 rounded-xl blur-lg opacity-50"></div>
             <div className="relative prose prose-invert prose-green max-w-none">
               <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkBreaks]}
+                remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   ...addIdToHeadings,
                   br: ({ ...props }) => <br className="block mt-3" {...props} />,
