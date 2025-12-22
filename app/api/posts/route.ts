@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { getPostsByTag } from "@/app/actions/getPostsByTag";
+import { getPostsByCompetitionId } from "@/app/actions/getPostsByCompetitionId";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const tagId = searchParams.get("tagId");
+  const competitionId = searchParams.get("competitionId");
 
-  if (!tagId) {
-    return NextResponse.json({ error: "Missing tagId" }, { status: 400 });
+  if (!competitionId) {
+    return NextResponse.json({ error: "Missing competitionId" }, { status: 400 });
   }
 
-  const posts = await getPostsByTag(tagId);
+  const posts = await getPostsByCompetitionId(competitionId);
   return NextResponse.json(posts);
 }

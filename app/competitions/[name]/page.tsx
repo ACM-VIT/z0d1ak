@@ -3,13 +3,18 @@ import { notFound } from "next/navigation"
 import ReactMarkdown from "react-markdown"
 import remarkBreaks from "remark-breaks"
 import remarkGfm from "remark-gfm"
+import { getServerSession } from "next-auth"
 
 import { getCompetitionPageData } from "@/app/actions/getCompetitionPageData"
+import { addCompetitionParticipant, getCompetitionParticipants } from "@/app/actions/competitionParticipants"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { TerminalText } from "@/components/terminal-text"
 import { formatDate } from "@/lib/utils"
-import { ChevronLeft, FileText } from "lucide-react"
+import { authOptions } from "@/lib/auth-options"
+import { ChevronLeft, FileText, Users } from "lucide-react"
 
 export default async function CompetitionPage(props: { params: Promise<{ name: string }> }) {
   const { name } = await props.params
@@ -18,6 +23,9 @@ export default async function CompetitionPage(props: { params: Promise<{ name: s
   if (!data) notFound()
 
   const { competition, readme, writeups } = data
+  const participants = await getCompetitionParticipants(competition.id)
+  const session = await getServerSession(authOptions)
+  const canEdit = session?.user?.role === "member"
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
@@ -76,10 +84,62 @@ export default async function CompetitionPage(props: { params: Promise<{ name: s
                       <p className="mb-2">No README found for this competition yet.</p>
                       <p className="font-mono text-sm">
                         Create a non-draft post titled <span className="text-primary">README</span> (or <span className="text-primary">README.md</span>)
-                        and tag it with <span className="text-primary">{competition.name}</span>.
+                        and set its competition to <span className="text-primary">{competition.name}</span>.
                       </p>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Participants */}
+            <div id="participants" className="relative mb-12">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm" />
+              <div className="relative bg-black border border-primary/30 rounded-xl overflow-hidden">
+                <div className="bg-gray-900 px-4 py-2 flex items-center gap-2 border-b border-primary/20">
+                  <Users className="h-4 w-4 text-primary" />
+                  <div className="text-xs text-muted-foreground font-mono">participants.txt</div>
+                </div>
+
+                <div className="p-4 md:p-6">
+                  <div className="flex flex-col gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <h2 className="text-xl font-bold">Participants</h2>
+                      <div className="text-sm text-muted-foreground">{participants.length} total</div>
+                    </div>
+
+                    {participants.length === 0 ? (
+                      <div className="text-muted-foreground">No participants added yet.</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {participants.map((p) => (
+                          <Badge key={p.id} variant="outline" className="border-primary/30 text-primary bg-primary/5">
+                            {p.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {canEdit ? (
+                        <form action={addCompetitionParticipant} className="flex flex-col sm:flex-row gap-3">
+                          <input type="hidden" name="competitionId" value={competition.id} />
+                        <input type="hidden" name="competitionName" value={competition.name} />
+                        <Input
+                          name="name"
+                          placeholder="Add participant name"
+                          className="bg-black/50 border-primary/30 focus:border-primary"
+                          required
+                        />
+                        <Button type="submit" className="sm:w-auto w-full">
+                          Add
+                        </Button>
+                      </form>
+                    ) : (
+                      <div className="text-xs text-muted-foreground font-mono">
+                        Login with a <span className="text-primary">member</span> account to add participants.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -92,14 +152,14 @@ export default async function CompetitionPage(props: { params: Promise<{ name: s
               </div>
 
               {writeups.length === 0 ? (
-                <div className="text-muted-foreground">No writeups tagged with this competition yet.</div>
+                <div className="text-muted-foreground">No writeups linked to this competition yet.</div>
               ) : (
                 <div className="space-y-4">
                   {writeups.map((post) => (
                     <Link key={post.id} href={`/writeups/${post.slug}`} className="block group">
                       <div className="relative">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <div className="relative bg-black border border-primary/30 hover:border-primary/60 rounded-xl p-4 md:p-5 transition-all duration-300">
+                        <div className="relative bg-black border border-primary/30 rounded-xl p-4 md:p-5">
                           <div className="flex items-center justify-between gap-4 mb-2">
                             <div className="text-lg font-semibold text-white group-hover:text-primary transition-colors duration-300">
                               {post.title}

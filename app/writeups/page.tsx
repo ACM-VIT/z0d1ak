@@ -127,7 +127,7 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                   <div className="relative">
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                    <div className="relative bg-black border border-primary/30 hover:border-primary/60 rounded-xl overflow-hidden transition-all duration-300">
+                    <div className="relative bg-black border border-primary/30 rounded-xl overflow-hidden">
                       <div className="flex flex-col md:flex-row">
                         <div className="flex items-center justify-center p-4 md:p-6 md:border-r border-primary/20 bg-black/80">
                           <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -259,4 +259,3 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
     </div>
   )
 }
-

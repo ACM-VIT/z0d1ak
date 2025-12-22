@@ -3,11 +3,14 @@
 import { db } from "@/lib/db";
 import { posts, tags, post_tags } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { validate as isValidUUID } from "uuid";
 
 export interface UpdatePostInput {
   id: string;
   title: string;
   content: string;
+  competitionId?: string | null;
+  solveScript?: string;
   excerpt: string;
   isDraft: boolean;
   categoryId: string;
@@ -16,17 +19,25 @@ export interface UpdatePostInput {
 
 export async function updatePost(data: UpdatePostInput) {
   console.log("Updating post with data:", data);
+  const competitionId = data.competitionId?.trim();
+  if (competitionId && !isValidUUID(competitionId)) {
+    throw new Error("Invalid competition identifier provided.");
+  }
+
+  const updateValues = {
+    title: data.title,
+    content: data.content,
+    solveScript: data.solveScript,
+    excerpt: data.excerpt,
+    isDraft: data.isDraft,
+    categoryId: data.categoryId,
+    updatedAt: new Date(),
+    ...(data.competitionId !== undefined ? { competitionId: competitionId || null } : {}),
+  };
 
   const updatedPost = await db
     .update(posts)
-    .set({
-      title: data.title,
-      content: data.content,
-      excerpt: data.excerpt,
-      isDraft: data.isDraft,
-      categoryId: data.categoryId,
-      updatedAt: new Date(),
-    })
+    .set(updateValues)
     .where(eq(posts.id, data.id))
     .returning();
   

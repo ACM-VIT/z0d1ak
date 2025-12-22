@@ -22,6 +22,8 @@ import {
   FileDown,
   Code,
   Terminal,
+  Trophy,
+  ExternalLink,
   Shield,
   Eye,
   Lock,
@@ -40,10 +42,16 @@ import { createWriteup } from "@/app/actions/createWriteup"
 import { updatePost } from "@/app/actions/updatePost"
 import { saveDraftPost } from "@/app/actions/saveDraftPost"
 import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
+import { fetchCompetitions } from "@/app/actions/fetchCompetitions"
 import { MarkdownToolbar } from "@/components/markdown-toolbar"
 import { CopyButton } from "@/components/copy-button"
 
 type Category = {
+  id: string
+  name: string
+}
+
+type Competition = {
   id: string
   name: string
 }
@@ -112,6 +120,172 @@ type EditorProps = {
   postId?: string
 }
 
+type EditorFieldProps = {
+  id: string
+  label: string
+  icon: React.ReactNode
+  hint?: string
+  className?: string
+  children: React.ReactNode
+}
+
+function EditorField({ id, label, icon, hint, className, children }: EditorFieldProps) {
+  return (
+    <div className={["space-y-2", className].filter(Boolean).join(" ")}>
+      <Label htmlFor={id} className="text-sm font-medium block text-primary flex items-center gap-2">
+        {icon}
+        {label}
+      </Label>
+      <div className="relative">
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-primary/10 rounded-md blur-sm opacity-50"></div>
+        {children}
+      </div>
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+    </div>
+  )
+}
+
+type EditorPaneProps = {
+  content: string
+  editorRef: React.RefObject<HTMLTextAreaElement | null>
+  wrapperRef?: React.RefObject<HTMLDivElement | null>
+  onChange: (value: string) => void
+  onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  onInsert: (markdown: string, selectionOffset?: number) => void
+}
+
+function EditorPane({ content, editorRef, wrapperRef, onChange, onKeyDown, onInsert }: EditorPaneProps) {
+  return (
+    <div className="flex-1 min-w-0" ref={wrapperRef}>
+      <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm p-2 border-b border-primary/20">
+        <MarkdownToolbar onInsert={onInsert} />
+      </div>
+      <div className="relative">
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/5 rounded-md blur-sm opacity-30"></div>
+        <textarea
+          ref={editorRef}
+          className="relative flex min-h-[400px] md:min-h-[600px] w-full rounded-md border border-primary/30 bg-black/80 px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+          placeholder="Write your CTF writeup here using Markdown..."
+          value={content}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          required
+        />
+      </div>
+    </div>
+  )
+}
+
+type HeadingProps = React.HTMLAttributes<HTMLHeadingElement> & {
+  children?: React.ReactNode
+}
+
+const previewHeadingComponents = {
+  h1: ({ children, ...props }: HeadingProps) => {
+    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const id = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+    return (
+      <h1
+        id={id}
+        className="text-3xl font-bold mt-8 mb-4 pb-2 border-b border-primary/20 flex items-center gap-2"
+        {...props}
+      >
+        <span className="text-primary">#</span> {children}
+      </h1>
+    )
+  },
+  h2: ({ children, ...props }: HeadingProps) => {
+    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const id = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+    return (
+      <h2
+        id={id}
+        className="text-2xl font-bold mt-6 mb-3 pb-1 border-b border-primary/10 flex items-center gap-2"
+        {...props}
+      >
+        <span className="text-primary">##</span> {children}
+      </h2>
+    )
+  },
+  h3: ({ children, ...props }: HeadingProps) => {
+    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const id = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+    return (
+      <h3 id={id} className="text-xl font-bold mt-5 mb-2 flex items-center gap-2" {...props}>
+        <span className="text-primary">###</span> {children}
+      </h3>
+    )
+  },
+  h4: ({ children, ...props }: HeadingProps) => {
+    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const id = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+    return (
+      <h4 id={id} className="text-lg font-bold mt-4 mb-2 flex items-center gap-2" {...props}>
+        <span className="text-primary">####</span> {children}
+      </h4>
+    )
+  },
+}
+
+type PreviewPaneProps = {
+  content: string
+  previewRef: React.RefObject<HTMLDivElement | null>
+  wrapperRef?: React.RefObject<HTMLDivElement | null>
+  onExport: () => void
+}
+
+function PreviewPane({ content, previewRef, wrapperRef, onExport }: PreviewPaneProps) {
+  return (
+    <div className="flex-1 min-w-0" ref={wrapperRef}>
+      <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm p-2 border-b border-primary/20 flex justify-between items-center">
+        <span className="text-sm font-medium flex items-center gap-2">
+          <Eye className="h-4 w-4 text-primary" />
+          Preview
+        </span>
+        <div className="flex items-center gap-2">
+          <CopyButton text={content} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="text-xs border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <FileDown className="h-3.5 w-3.5 mr-1" />
+            Export
+          </Button>
+        </div>
+      </div>
+      <div className="relative">
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/5 rounded-md blur-sm opacity-30"></div>
+        <div
+          ref={previewRef}
+          className="relative min-h-[400px] md:min-h-[600px] border border-primary/30 rounded-md p-4 bg-black/80 overflow-auto"
+        >
+          {content ? (
+            <MarkdownPreview content={content} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <p>Your preview will appear here. Start writing to see it.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Editor({ postId }: EditorProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -124,7 +298,9 @@ export default function Editor({ postId }: EditorProps) {
 
   const [title, setTitle] = useState("")
   const [category, setCategory] = useState("")
+  const [competitionId, setCompetitionId] = useState("")
   const [content, setContent] = useState("")
+  const [solveScript, setSolveScript] = useState("")
   const [tags, setTags] = useState("")
   const [viewMode, setViewMode] = useState<"write" | "preview" | "split">("write")
   const [error, setError] = useState("")
@@ -132,6 +308,7 @@ export default function Editor({ postId }: EditorProps) {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [categoriesList, setCategoriesList] = useState<Category[]>([])
+  const [competitionsList, setCompetitionsList] = useState<Competition[]>([])
   const [isDraft, setIsDraft] = useState(false)
   const [undoStack, setUndoStack] = useState<string[]>([])
   const [draftId, setDraftId] = useState<string | null>(null)
@@ -158,14 +335,7 @@ export default function Editor({ postId }: EditorProps) {
 
   // Scroll synchronization between editor and preview
   useEffect(() => {
-    if (
-      viewMode !== "split" ||
-      !editorRef.current ||
-      !previewRef.current ||
-      !editorWrapperRef.current ||
-      !previewWrapperRef.current
-    )
-      return
+    if (viewMode !== "split" || !editorRef.current || !previewRef.current) return
 
     const handleEditorScroll = () => {
       if (isPreviewScrolling) return
@@ -173,7 +343,7 @@ export default function Editor({ postId }: EditorProps) {
       setIsEditorScrolling(true)
 
       const editorEl = editorRef.current
-      const previewEl = previewWrapperRef.current
+      const previewEl = previewRef.current
 
       if (!editorEl || !previewEl) return
 
@@ -194,7 +364,7 @@ export default function Editor({ postId }: EditorProps) {
       setIsPreviewScrolling(true)
 
       const editorEl = editorRef.current
-      const previewEl = previewWrapperRef.current
+      const previewEl = previewRef.current
 
       if (!editorEl || !previewEl) return
 
@@ -210,7 +380,7 @@ export default function Editor({ postId }: EditorProps) {
     }
 
     const editorElement = editorRef.current
-    const previewElement = previewWrapperRef.current
+    const previewElement = previewRef.current
 
     editorElement.addEventListener("scroll", handleEditorScroll)
     previewElement.addEventListener("scroll", handlePreviewScroll)
@@ -228,7 +398,9 @@ export default function Editor({ postId }: EditorProps) {
         const parsed = JSON.parse(savedWriteup)
         setTitle(parsed.title || "")
         setCategory(parsed.category || "")
+        setCompetitionId(parsed.competitionId || "")
         setContent(parsed.content || "")
+        setSolveScript(parsed.solveScript || "")
         setTags(parsed.tags ? (Array.isArray(parsed.tags) ? parsed.tags.join(", ") : parsed.tags) : "")
         setLastSaved(parsed.savedAt ? new Date(parsed.savedAt) : null)
         setIsDraft(parsed.isDraft)
@@ -247,7 +419,9 @@ export default function Editor({ postId }: EditorProps) {
           JSON.stringify({
             title,
             category,
+            competitionId,
             content,
+            solveScript,
             tags,
             savedAt: new Date().toISOString(),
             isDraft,
@@ -257,21 +431,22 @@ export default function Editor({ postId }: EditorProps) {
       }
     }, 5000)
     return () => clearTimeout(timeout)
-  }, [title, category, content, tags, autoSaveEnabled, storageKey, isDraft])
+  }, [title, category, competitionId, content, solveScript, tags, autoSaveEnabled, storageKey, isDraft])
 
   useEffect(() => {
     let isMounted = true
-    const fetchCategories = async () => {
+    const fetchLookupData = async () => {
       try {
-        const categories = await fetchCategoriesAction()
+        const [categories, competitions] = await Promise.all([fetchCategoriesAction(), fetchCompetitions()])
         if (isMounted) {
           setCategoriesList(categories)
+          setCompetitionsList(competitions)
         }
       } catch (error) {
-        console.error("Error fetching categories:", error)
+        console.error("Error fetching lookup data:", error)
       }
     }
-    fetchCategories()
+    fetchLookupData()
     return () => {
       isMounted = false
     }
@@ -284,7 +459,9 @@ export default function Editor({ postId }: EditorProps) {
           const draftResult = await saveDraftPost({
             title,
             categoryId: category,
+            competitionId,
             content,
+            solveScript,
             tags: tags
               .split(",")
               .map((tag) => tag.trim())
@@ -306,7 +483,7 @@ export default function Editor({ postId }: EditorProps) {
       }
     }, 30000)
     return () => clearInterval(interval)
-  }, [title, category, content, tags, session, draftId])
+  }, [title, category, competitionId, content, solveScript, tags, session, draftId])
 
   useEffect(() => {
     if (isFullscreen) {
@@ -344,7 +521,9 @@ export default function Editor({ postId }: EditorProps) {
         const draftResult = await saveDraftPost({
           title,
           categoryId: category,
+          competitionId,
           content,
+          solveScript,
           tags: tagsArray,
           authorId: session.user.id,
           draftId,
@@ -357,7 +536,9 @@ export default function Editor({ postId }: EditorProps) {
             id: postId,
             title,
             categoryId: category,
+            competitionId,
             content,
+            solveScript,
             excerpt,
             isDraft: false,
             tags: tagsArray,
@@ -366,7 +547,9 @@ export default function Editor({ postId }: EditorProps) {
           await createWriteup({
             title,
             categoryId: category,
+            competitionId,
             content,
+            solveScript,
             tags: tagsArray,
             authorId: session.user.id,
             isDraft: false,
@@ -398,7 +581,9 @@ export default function Editor({ postId }: EditorProps) {
       localStorage.removeItem(storageKey)
       setTitle("")
       setCategory("")
+      setCompetitionId("")
       setContent("")
+      setSolveScript("")
       setTags("")
       setLastSaved(null)
       setIsDraft(false)
@@ -409,6 +594,21 @@ export default function Editor({ postId }: EditorProps) {
         className: "bg-primary/10 border-primary/30 text-white",
       })
     }
+  }
+
+  const handleContentChange = (value: string) => {
+    setUndoStack((prev) => [...prev, content])
+    setContent(value)
+  }
+
+  const handleExport = () => {
+    const blob = new Blob([content], { type: "text/markdown" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${title || "writeup"}.md`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const insertTemplate = (template: string) => {
@@ -533,12 +733,12 @@ export default function Editor({ postId }: EditorProps) {
             className={`relative overflow-hidden ${isFullscreen ? "border-0 rounded-none shadow-none h-full bg-black" : "border-primary/30 bg-black/80 backdrop-blur-sm"}`}
           >
             <CardHeader className={`p-6 ${!isFullscreen ? "border-b border-primary/20 bg-primary/5" : ""}`}>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Terminal className="h-5 w-5 text-primary" />
                   {postId ? "Edit Writeup" : "Create New Writeup"}
                 </CardTitle>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground font-mono">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5 text-primary" />
                     {lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : "Not saved yet"}
@@ -548,66 +748,50 @@ export default function Editor({ postId }: EditorProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row gap-4 mb-4">
-                <div className="flex-1">
-                  <Label
-                    htmlFor="title"
-                    className="text-sm font-medium mb-2 block text-primary flex items-center gap-2"
-                  >
-                    <FileCode2 className="h-4 w-4" />
-                    Title
-                  </Label>
-                  <div className="relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-primary/10 rounded-md blur-sm opacity-50"></div>
-                    <Input
-                      id="title"
-                      className="relative bg-black/80 border-primary/30 focus:border-primary"
-                      placeholder="Enter writeup title"
-                      value={title}
-                      onChange={(e) => {
-                        setUndoStack((prev) => [...prev, content])
-                        setTitle(e.target.value)
-                      }}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="md:w-1/3">
-                  <Label
-                    htmlFor="category"
-                    className="text-sm font-medium mb-2 block text-primary flex items-center gap-2"
-                  >
-                    <Shield className="h-4 w-4" />
-                    Category
-                  </Label>
-                  <div className="relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-primary/10 rounded-md blur-sm opacity-50"></div>
-                    <Select value={category} onValueChange={(val) => setCategory(val)}>
-                      <SelectTrigger className="relative bg-black/80 border-primary/30 focus:border-primary">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-black border-primary/30">
-                        {categoriesList.map((c: Category) => (
-                          <SelectItem key={c.id} value={c.id} className="flex items-center gap-2">
-                            <div className="flex items-center gap-2">
-                              {getCategoryIcon(c.id)}
-                              {c.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+              <div className="grid gap-4 mb-4 lg:grid-cols-12">
+                <EditorField id="title" label="Title" icon={<FileCode2 className="h-4 w-4" />} className="lg:col-span-7">
+                  <Input
+                    id="title"
+                    className="relative bg-black/80 border-primary/30 focus:border-primary"
+                    placeholder="Enter writeup title"
+                    value={title}
+                    onChange={(e) => {
+                      setUndoStack((prev) => [...prev, content])
+                      setTitle(e.target.value)
+                    }}
+                    required
+                  />
+                </EditorField>
 
-              <div className="mb-4">
-                <Label htmlFor="tags" className="text-sm font-medium mb-2 block text-primary flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Tags (comma separated)
-                </Label>
-                <div className="relative">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-primary/10 rounded-md blur-sm opacity-50"></div>
+                <EditorField
+                  id="category"
+                  label="Category"
+                  icon={<Shield className="h-4 w-4" />}
+                  className="lg:col-span-5"
+                >
+                  <Select value={category} onValueChange={(val) => setCategory(val)}>
+                    <SelectTrigger className="relative bg-black/80 border-primary/30 focus:border-primary">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black border-primary/30">
+                      {categoriesList.map((c: Category) => (
+                        <SelectItem key={c.id} value={c.id} className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            {getCategoryIcon(c.id)}
+                            {c.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </EditorField>
+
+                <EditorField
+                  id="tags"
+                  label="Tags (comma separated)"
+                  icon={<Tag className="h-4 w-4" />}
+                  className="lg:col-span-7"
+                >
                   <Input
                     id="tags"
                     className="relative bg-black/80 border-primary/30 focus:border-primary"
@@ -615,11 +799,52 @@ export default function Editor({ postId }: EditorProps) {
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
                   />
-                </div>
+                </EditorField>
+
+                <EditorField
+                  id="competition"
+                  label="Competition (optional)"
+                  icon={<Trophy className="h-4 w-4" />}
+                  className="lg:col-span-5"
+                  hint="Create competitions in the dashboard to link writeups."
+                >
+                  <Select
+                    value={competitionId || "none"}
+                    onValueChange={(val) => setCompetitionId(val === "none" ? "" : val)}
+                  >
+                    <SelectTrigger className="relative bg-black/80 border-primary/30 focus:border-primary">
+                      <SelectValue placeholder="Link to a competition" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black border-primary/30">
+                      <SelectItem value="none">No competition</SelectItem>
+                      {competitionsList.map((competition) => (
+                        <SelectItem key={competition.id} value={competition.id}>
+                          {competition.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </EditorField>
+
+                <EditorField
+                  id="solveScript"
+                  label="Solve Script (optional)"
+                  icon={<Terminal className="h-4 w-4" />}
+                  className="lg:col-span-12"
+                  hint="This renders as a syntax-highlighted code block in the writeup."
+                >
+                  <textarea
+                    id="solveScript"
+                    className="relative min-h-[160px] w-full resize-y rounded-md border border-primary/30 bg-black/80 px-3 py-2 text-sm font-mono text-white placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                    placeholder="Paste your solve script here."
+                    value={solveScript}
+                    onChange={(e) => setSolveScript(e.target.value)}
+                  />
+                </EditorField>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -641,7 +866,7 @@ export default function Editor({ postId }: EditorProps) {
                     Detailed Template
                   </Button>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="flex items-center space-x-2 text-sm">
                     <Switch
                       id="auto-save"
@@ -699,133 +924,31 @@ export default function Editor({ postId }: EditorProps) {
             <CardContent className={`${isFullscreen ? "p-0" : "p-6 pt-0"}`}>
               {viewMode === "split" ? (
                 <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1 min-w-0" ref={editorWrapperRef}>
-                    <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm p-2 border-b border-primary/20">
-                      <MarkdownToolbar onInsert={insertMarkdown} />
-                    </div>
-                    <div className="relative">
-                      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/5 rounded-md blur-sm opacity-30"></div>
-                      <textarea
-                        ref={editorRef}
-                        className="relative flex min-h-[400px] md:min-h-[600px] w-full rounded-md border border-primary/30 bg-black/80 px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
-                        placeholder="Write your CTF writeup here using Markdown..."
-                        value={content}
-                        onChange={(e) => {
-                          setUndoStack((prev) => [...prev, content])
-                          setContent(e.target.value)
-                        }}
-                        onKeyDown={handleKeyDown}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0" ref={previewWrapperRef}>
-                    <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm p-2 border-b border-primary/20 flex justify-between items-center">
-                      <span className="text-sm font-medium flex items-center gap-2">
-                        <Eye className="h-4 w-4 text-primary" />
-                        Preview
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <CopyButton text={content} />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const blob = new Blob([content], { type: "text/markdown" })
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement("a")
-                            a.href = url
-                            a.download = `${title || "writeup"}.md`
-                            a.click()
-                          }}
-                          className="text-xs border-primary/30 text-primary hover:bg-primary/10"
-                        >
-                          <FileDown className="h-3.5 w-3.5 mr-1" />
-                          Export
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/5 rounded-md blur-sm opacity-30"></div>
-                      <div
-                        ref={previewRef}
-                        className="relative min-h-[400px] md:min-h-[600px] border border-primary/30 rounded-md p-4 bg-black/80 overflow-auto"
-                      >
-                        {content ? (
-                          <MarkdownPreview content={content} />
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <p>Your preview will appear here. Start writing to see it.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <EditorPane
+                    content={content}
+                    editorRef={editorRef}
+                    wrapperRef={editorWrapperRef}
+                    onChange={handleContentChange}
+                    onKeyDown={handleKeyDown}
+                    onInsert={insertMarkdown}
+                  />
+                  <PreviewPane
+                    content={content}
+                    previewRef={previewRef}
+                    wrapperRef={previewWrapperRef}
+                    onExport={handleExport}
+                  />
                 </div>
               ) : viewMode === "write" ? (
-                <>
-                  <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm p-2 border-b border-primary/20">
-                    <MarkdownToolbar onInsert={insertMarkdown} />
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/5 rounded-md blur-sm opacity-30"></div>
-                    <textarea
-                      ref={editorRef}
-                      className="relative flex min-h-[400px] md:min-h-[600px] w-full rounded-md border border-primary/30 bg-black/80 px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
-                      placeholder="Write your CTF writeup here using Markdown..."
-                      value={content}
-                      onChange={(e) => {
-                        setUndoStack((prev) => [...prev, content])
-                        setContent(e.target.value)
-                      }}
-                      onKeyDown={handleKeyDown}
-                      required
-                    />
-                  </div>
-                </>
+                <EditorPane
+                  content={content}
+                  editorRef={editorRef}
+                  onChange={handleContentChange}
+                  onKeyDown={handleKeyDown}
+                  onInsert={insertMarkdown}
+                />
               ) : (
-                <div className="relative">
-                  <div className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm p-2 border-b border-primary/20 flex justify-between items-center">
-                    <span className="text-sm font-medium flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-primary" />
-                      Preview
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <CopyButton text={content} />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const blob = new Blob([content], { type: "text/markdown" })
-                          const url = URL.createObjectURL(blob)
-                          const a = document.createElement("a")
-                          a.href = url
-                          a.download = `${title || "writeup"}.md`
-                          a.click()
-                        }}
-                        className="text-xs border-primary/30 text-primary hover:bg-primary/10"
-                      >
-                        <FileDown className="h-3.5 w-3.5 mr-1" />
-                        Export
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-primary/5 rounded-md blur-sm opacity-30"></div>
-                    <div
-                      ref={previewRef}
-                      className="relative min-h-[400px] md:min-h-[600px] border border-primary/30 rounded-md p-4 bg-black/80 overflow-auto"
-                    >
-                      {content ? (
-                        <MarkdownPreview content={content} />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">
-                          <p>Your preview will appear here. Start writing to see it.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <PreviewPane content={content} previewRef={previewRef} onExport={handleExport} />
               )}
             </CardContent>
 
@@ -872,146 +995,90 @@ export default function Editor({ postId }: EditorProps) {
 // Update the MarkdownPreview component to better handle line breaks
 function MarkdownPreview({ content }: { content: string }) {
   return (
-    <div className="prose dark:prose-invert max-w-none prose-headings:text-white prose-headings:font-bold prose-h1:text-2xl prose-h1:border-b prose-h1:border-primary/20 prose-h1:pb-2 prose-h2:text-xl prose-h2:border-b prose-h2:border-primary/10 prose-h2:pb-1 prose-h3:text-lg prose-p:text-muted-foreground prose-a:text-primary prose-a:no-underline prose-a:border-b prose-a:border-dotted prose-a:border-primary/50 hover:prose-a:border-primary prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+    <div className="prose prose-invert prose-green max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={{
-          // Ensure line breaks are preserved
-          br: ({ node, ...props }) => <br style={{ display: "block", content: "", marginTop: "0.75rem" }} {...props} />,
-          // Ensure paragraphs have proper spacing
-          p: ({ node, ...props }) => (
-            <p style={{ marginBottom: "1rem", lineHeight: "1.6", whiteSpace: "pre-line" }} {...props} />
-          ),
-          blockquote: ({ node, ...props }) => (
+          ...previewHeadingComponents,
+          br: ({ ...props }) => <br className="block mt-3" {...props} />,
+          p: ({ ...props }) => <p className="mb-4 leading-relaxed text-base md:text-lg" {...props} />,
+          ul: ({ ...props }) => <ul className="list-disc pl-8 mb-4 space-y-2" {...props} />,
+          ol: ({ ...props }) => <ol className="list-decimal pl-8 mb-4 space-y-2" {...props} />,
+          li: ({ ...props }) => <li className="mb-1" {...props} />,
+          blockquote: ({ ...props }) => (
             <blockquote
-              style={{
-                borderLeftWidth: "4px",
-                borderLeftColor: "rgba(0, 255, 170, 0.3)",
-                paddingLeft: "1rem",
-                fontStyle: "italic",
-                marginBottom: "1rem",
-                backgroundColor: "rgba(0, 255, 170, 0.05)",
-                padding: "0.5rem",
-                borderRadius: "0 0.375rem 0.375rem 0",
-                whiteSpace: "pre-line",
-              }}
+              className="border-l-4 border-primary/30 pl-4 italic mb-4 bg-primary/5 p-3 rounded-r-lg"
               {...props}
             />
           ),
-          table: ({ node, ...props }) => (
-            <div style={{ overflowX: "auto", marginBottom: "1rem" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }} {...props} />
+          hr: ({ ...props }) => <hr className="my-6 border-primary/20" {...props} />,
+          table: ({ ...props }) => (
+            <div className="overflow-x-auto mb-4">
+              <table className="w-full border-collapse" {...props} />
             </div>
           ),
-          th: ({ node, ...props }) => (
-            <th
-              style={{
-                border: "1px solid rgba(0, 255, 170, 0.2)",
-                padding: "0.5rem",
-                fontWeight: "semibold",
-                backgroundColor: "rgba(0, 255, 170, 0.1)",
-              }}
+          th: ({ ...props }) => (
+            <th className="border border-primary/20 p-2 font-semibold bg-primary/10" {...props} />
+          ),
+          td: ({ ...props }) => <td className="border border-primary/20 p-2" {...props} />,
+          a: ({ ...props }) => (
+            <a
+              className="text-primary no-underline border-b border-dotted border-primary/50 hover:border-primary transition-colors pb-0.5 inline-flex items-center gap-1"
+              target="_blank"
+              rel="noopener noreferrer"
               {...props}
-            />
-          ),
-          td: ({ node, ...props }) => (
-            <td style={{ border: "1px solid rgba(0, 255, 170, 0.2)", padding: "0.5rem" }} {...props} />
-          ),
-          img: ({ node, ...props }) => (
-            <div
-              style={{
-                maxWidth: "100%",
-                margin: "1rem 0",
-                borderRadius: "0.375rem",
-                overflow: "hidden",
-                border: "1px solid rgba(0, 255, 170, 0.3)",
-                boxShadow: "0 0 20px rgba(0, 0, 0, 0.3)",
-              }}
             >
-              <img style={{ maxWidth: "100%", height: "auto" }} {...props} />
+              {props.children}
+              <ExternalLink className="h-3 w-3 inline" />
+            </a>
+          ),
+          img: ({ ...props }) => (
+            <div className="my-6 rounded-lg overflow-hidden border border-primary/30 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+              <img className="max-w-full h-auto rounded-lg" {...props} />
             </div>
           ),
-          code({ node, inline, className, children, ...props }: any) {
+          code({ inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "")
             return !inline && match ? (
-              <div style={{ position: "relative", margin: "1.5rem 0" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    backgroundColor: "#1E1E1E",
-                    padding: "0.5rem 1rem",
-                    borderRadius: "0.375rem 0.375rem 0 0",
-                    borderTop: "1px solid rgba(0, 255, 170, 0.3)",
-                    borderLeft: "1px solid rgba(0, 255, 170, 0.3)",
-                    borderRight: "1px solid rgba(0, 255, 170, 0.3)",
-                    fontSize: "0.75rem",
-                    color: "rgba(255, 255, 255, 0.6)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <Code style={{ height: "1rem", width: "1rem", color: "rgb(0, 255, 170)" }} />
-                    <span>{match[1]}</span>
+              <div className="relative my-6 group">
+                <div className="absolute -inset-2 bg-primary/10 rounded-lg blur-sm opacity-50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <div className="flex items-center justify-between bg-gray-900 px-4 py-2 text-xs font-mono text-muted-foreground rounded-t-lg border-t border-l border-r border-primary/30">
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4 text-primary" />
+                      <span>{match[1]}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-primary/50"></div>
+                      <div className="h-2 w-2 rounded-full bg-primary/30"></div>
+                      <div className="h-2 w-2 rounded-full bg-primary/10"></div>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <div
-                      style={{
-                        height: "0.5rem",
-                        width: "0.5rem",
-                        borderRadius: "9999px",
-                        backgroundColor: "rgba(0, 255, 170, 0.5)",
-                      }}
-                    ></div>
-                    <div
-                      style={{
-                        height: "0.5rem",
-                        width: "0.5rem",
-                        borderRadius: "9999px",
-                        backgroundColor: "rgba(0, 255, 170, 0.3)",
-                      }}
-                    ></div>
-                    <div
-                      style={{
-                        height: "0.5rem",
-                        width: "0.5rem",
-                        borderRadius: "9999px",
-                        backgroundColor: "rgba(0, 255, 170, 0.1)",
-                      }}
-                    ></div>
-                  </div>
+                  <SyntaxHighlighter
+                    style={vscDarkPlus}
+                    language={match[1]}
+                    PreTag="div"
+                    className="rounded-b-lg border-b border-l border-r border-primary/30"
+                    customStyle={
+                      {
+                        margin: 0,
+                        borderRadius: "0 0 0.5rem 0.5rem",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                      } as React.CSSProperties
+                    }
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, "")}
+                  </SyntaxHighlighter>
                 </div>
-                <SyntaxHighlighter
-                  style={vscDarkPlus as { [key: string]: React.CSSProperties }}
-                  language={match[1]}
-                  PreTag="div"
-                  customStyle={{
-                    margin: 0,
-                    borderRadius: "0 0 0.375rem 0.375rem",
-                    border: "1px solid rgba(0, 255, 170, 0.3)",
-                    borderTop: "none",
-                  }}
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, "")}
-                </SyntaxHighlighter>
               </div>
             ) : (
-              <code
-                style={{
-                  backgroundColor: "rgba(0, 255, 170, 0.1)",
-                  padding: "0.2rem 0.4rem",
-                  borderRadius: "0.25rem",
-                  fontFamily: "monospace",
-                  fontSize: "0.875rem",
-                  color: "rgb(0, 255, 170)",
-                }}
-                {...props}
-              >
+              <code className="bg-primary/10 px-1.5 py-0.5 rounded text-primary font-mono text-sm" {...props}>
                 {children}
               </code>
             )
           },
+          pre: ({ ...props }) => <pre className="overflow-x-auto rounded-lg my-6" {...props} />,
         }}
       >
         {content}
@@ -1019,4 +1086,3 @@ function MarkdownPreview({ content }: { content: string }) {
     </div>
   )
 }
-

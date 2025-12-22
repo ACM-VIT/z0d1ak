@@ -19,13 +19,21 @@ export const categories = pgTable("categories", {
   name: varchar("name", { length: 256 }).notNull(),
 });
 
+export const competitions = pgTable("competitions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 256 }).notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const posts = pgTable("posts", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 256 }).notNull(),
   slug: varchar("slug", { length: 256 }).notNull().unique(),
   excerpt: text("excerpt").notNull(),
   content: text("content").notNull(),
+  solveScript: text("solve_script"),
   categoryId: uuid("category_id").notNull(),
+  competitionId: uuid("competition_id"),
   authorId: uuid("author_id").notNull(),
   isDraft: boolean("is_draft").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -96,9 +104,17 @@ export const post_tags = pgTable("post_tags", {
   primaryKey: [table.postId, table.tagId],
 }));
 
+export const competition_participants = pgTable("competition_participants", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  competitionId: uuid("competition_id").notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const schema = {
   users,
   categories,
+  competitions,
   posts,
   accounts,
   sessions,
@@ -107,4 +123,5 @@ export const schema = {
   comments,
   tags,
   post_tags,
+  competition_participants,
 };

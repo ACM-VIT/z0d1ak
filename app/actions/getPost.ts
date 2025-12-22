@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts, users, categories, post_tags, tags } from "@/drizzle/schema";
+import { posts, users, categories, competitions, post_tags, tags } from "@/drizzle/schema";
 import { eq, and, sql } from "drizzle-orm";
 
 export async function getPostBySlug(slug: string) {
@@ -16,6 +16,9 @@ export async function getPostBySlug(slug: string) {
       slug: posts.slug,
       excerpt: posts.excerpt,
       content: posts.content,
+      solveScript: posts.solveScript,
+      competitionId: posts.competitionId,
+      competitionName: competitions.name,
       createdAt: posts.createdAt,
       category: categories.name,
       author: {
@@ -31,10 +34,11 @@ export async function getPostBySlug(slug: string) {
     .from(posts)
     .leftJoin(users, eq(posts.authorId, users.id))
     .leftJoin(categories, eq(posts.categoryId, categories.id))
+    .leftJoin(competitions, eq(posts.competitionId, competitions.id))
     .leftJoin(post_tags, eq(posts.id, post_tags.postId))
     .leftJoin(tags, eq(post_tags.tagId, tags.id))
     .where(and(eq(posts.slug, decodedSlug), eq(posts.isDraft, false)))
-    .groupBy(posts.id, categories.name, users.name);
+    .groupBy(posts.id, categories.name, users.name, competitions.name);
 
   console.log("getPostBySlug: raw query result:", result);
   if (!result[0]) return null;
@@ -59,6 +63,8 @@ export async function getPostById(id: string) {
       slug: posts.slug,
       excerpt: posts.excerpt,
       content: posts.content,
+      solveScript: posts.solveScript,
+      competitionId: posts.competitionId,
       isDraft: posts.isDraft,
       categoryId: posts.categoryId,
       createdAt: posts.createdAt,

@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { tags, posts, post_tags, categories, users } from "@/drizzle/schema"
+import { competitions, posts, categories, users } from "@/drizzle/schema"
 import { and, desc, eq } from "drizzle-orm"
 
 export type CompetitionWriteup = {
@@ -31,19 +31,19 @@ function isReadmeLikePost(post: Pick<CompetitionWriteup, "title" | "slug">) {
 export async function getCompetitionPageData(competitionNameParam: string) {
   const competitionName = decodeURIComponent(competitionNameParam)
 
-  const foundTags = await db
+  const foundCompetition = await db
     .select({
-      id: tags.id,
-      name: tags.name,
+      id: competitions.id,
+      name: competitions.name,
     })
-    .from(tags)
-    .where(eq(tags.name, competitionName))
+    .from(competitions)
+    .where(eq(competitions.name, competitionName))
     .limit(1)
 
-  const competition = foundTags[0]
+  const competition = foundCompetition[0] ?? null
   if (!competition) return null
 
-  const taggedPosts = await db
+  const postsForCompetition = await db
     .select({
       id: posts.id,
       title: posts.title,
@@ -57,11 +57,10 @@ export async function getCompetitionPageData(competitionNameParam: string) {
     .from(posts)
     .leftJoin(users, eq(posts.authorId, users.id))
     .leftJoin(categories, eq(posts.categoryId, categories.id))
-    .leftJoin(post_tags, eq(posts.id, post_tags.postId))
-    .where(and(eq(post_tags.tagId, competition.id), eq(posts.isDraft, false)))
+    .where(and(eq(posts.competitionId, competition.id), eq(posts.isDraft, false)))
     .orderBy(desc(posts.createdAt))
 
-  const formattedPosts: CompetitionWriteup[] = taggedPosts.map((p) => ({
+  const formattedPosts: CompetitionWriteup[] = postsForCompetition.map((p) => ({
     id: p.id,
     title: p.title,
     slug: p.slug,

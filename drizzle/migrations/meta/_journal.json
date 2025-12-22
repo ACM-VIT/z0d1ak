@@ -43,6 +43,13 @@
       "when": 1740990598247,
       "tag": "0005_crazy_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766422754470,
+      "tag": "0006_amusing_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

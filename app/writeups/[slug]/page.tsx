@@ -5,7 +5,7 @@ import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Calendar, Tag, User, ChevronLeft, Shield, Clock, FileText, ExternalLink, Code, Zap } from "lucide-react"
+import { Calendar, Tag, User, ChevronLeft, Shield, Clock, FileText, ExternalLink, Code, Zap, Trophy } from "lucide-react"
 import { getPostBySlug } from "@/app/actions/getPost"
 import { getRelatedPosts } from "@/app/actions/getRelatedPosts"
 import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
@@ -99,6 +99,8 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
   const postCategoryName = post.category ?? ""
   const authorData = post.author as { name: string; image?: string } | null
   const authorName = authorData?.name || "Unknown Author"
+  const solveScript = typeof post.solveScript === "string" ? post.solveScript.trim() : ""
+  const competitionName = post.competitionName ?? ""
 
   const categoriesList = await fetchCategoriesAction()
 
@@ -148,6 +150,15 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                       <Tag className="h-3 w-3" />
                       {matchedCategory?.name || postCategoryName}
                     </div>
+                    {competitionName ? (
+                      <Link
+                        href={`/competitions/${encodeURIComponent(competitionName)}`}
+                        className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30 hover:bg-primary/20 transition-colors"
+                      >
+                        <Trophy className="h-3 w-3" />
+                        {competitionName}
+                      </Link>
+                    ) : null}
                     <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
                       <Calendar className="h-3 w-3" />
                       {formatDate(postCreatedAt)}
@@ -292,6 +303,38 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
             </div>
           </div>
 
+          {solveScript ? (
+            <div className="mt-12">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm"></div>
+                <div className="relative bg-black border border-primary/30 rounded-xl overflow-hidden">
+                  <div className="bg-gray-900 px-4 py-2 flex items-center gap-2 border-b border-primary/20">
+                    <Code className="h-4 w-4 text-primary" />
+                    <div className="text-xs text-muted-foreground font-mono">solve.sh - z0d1ak@ctf</div>
+                  </div>
+                  <div className="p-2 md:p-4">
+                    <SyntaxHighlighter
+                      style={vscDarkPlus}
+                      language="text"
+                      customStyle={
+                        {
+                          margin: 0,
+                          background: "transparent",
+                          padding: "0.75rem",
+                          fontSize: "0.85rem",
+                          overflowX: "auto",
+                        } as React.CSSProperties
+                      }
+                      className="rounded-lg border border-primary/20"
+                    >
+                      {solveScript}
+                    </SyntaxHighlighter>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {/* Like and Comments Section */}
           <LikeComments postId={post.id} />
 
@@ -338,4 +381,3 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
     </div>
   )
 }
-

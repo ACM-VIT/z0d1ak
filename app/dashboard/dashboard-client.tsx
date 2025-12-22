@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -28,14 +29,21 @@ import {
   EyeOff,
   ChevronRight,
   Cpu,
-  Mail
+  Mail,
+  Search,
+  Trophy,
+  Users
 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { updatePost } from "../actions/updatePost"
 import { deletePost } from "../actions/deletePost"
+import { addCompetitionParticipant } from "../actions/competitionParticipants"
+import { createCompetition } from "../actions/createCompetition"
 
 interface DashboardPost {
   id: string;
@@ -46,6 +54,19 @@ interface DashboardPost {
   categoryName: string | null;
   categoryId: string | null;
   isDraft: boolean;
+}
+
+interface CompetitionParticipant {
+  id: string;
+  competitionId: string;
+  name: string;
+  createdAt: string;
+}
+
+interface DashboardCompetition {
+  id: string;
+  name: string;
+  participants: CompetitionParticipant[];
 }
 
 type HeadingProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -102,6 +123,7 @@ function getCategoryIcon(categoryName: string | null | undefined) {
 export default function DashboardClient({
   session,
   posts,
+  competitions,
 }: {
   session: any;
   posts: Array<{
@@ -114,14 +136,45 @@ export default function DashboardClient({
     categoryId: string | null;
     isDraft: boolean;
   }>;
+  competitions: DashboardCompetition[];
 }) {
   const [activeTab, setActiveTab] = useState("writeups")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [timeString, setTimeString] = useState("")
   const [isLoading, setIsLoading] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
+  const [competitionQuery, setCompetitionQuery] = useState("")
+  const router = useRouter()
 
   const publishedPosts = posts.filter((post) => !post.isDraft)
   const draftPosts = posts.filter((post) => post.isDraft)
+
+  const normalizedSearch = searchQuery.trim().toLowerCase()
+  const matchesSearch = (post: DashboardPost) => {
+    if (!normalizedSearch) return true
+    const haystack = `${post.title} ${post.excerpt}`.toLowerCase()
+    return haystack.includes(normalizedSearch)
+  }
+
+  const sortByDate = (items: DashboardPost[]) =>
+    [...items].sort((a, b) => {
+      const aDate = new Date(a.createdAt).getTime()
+      const bDate = new Date(b.createdAt).getTime()
+      return sortOrder === "newest" ? bDate - aDate : aDate - bDate
+    })
+
+  const filteredPublishedPosts = sortByDate(publishedPosts.filter(matchesSearch))
+  const filteredDraftPosts = sortByDate(draftPosts.filter(matchesSearch))
+
+  const normalizedCompetitionQuery = competitionQuery.trim().toLowerCase()
+  const filteredCompetitions = competitions.filter((competition) => {
+    if (!normalizedCompetitionQuery) return true
+    const participantNames = competition.participants.map((participant) => participant.name).join(" ")
+    return `${competition.name} ${participantNames}`.toLowerCase().includes(normalizedCompetitionQuery)
+  })
+
+  const showPostTools = activeTab === "writeups" || activeTab === "drafts"
 
   useEffect(() => {
     const updateTime = () => {
@@ -133,8 +186,18 @@ export default function DashboardClient({
     const interval = setInterval(updateTime, 1000)
 
     return () => clearInterval(interval)
-  }, [])  
-    const handleUnpublish = async (post: DashboardPost) => {
+  }, [])
+
+  useEffect(() => {
+    if (activeTab !== "writeups" && activeTab !== "drafts") {
+      setSearchQuery("")
+    }
+    if (activeTab !== "competitions") {
+      setCompetitionQuery("")
+    }
+  }, [activeTab])
+
+  const handleUnpublish = async (post: DashboardPost) => {
     try {
       setIsLoading(post.id);
       await updatePost({
@@ -145,7 +208,7 @@ export default function DashboardClient({
         excerpt: post.excerpt || post.title,
         categoryId: post.categoryId || "00000000-0000-0000-0000-000000000000",
       });
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       console.error("Failed to unpublish post:", error);
     } finally {
@@ -157,7 +220,7 @@ export default function DashboardClient({
     try {
       setIsLoading(postId)
       await deletePost(postId)
-      window.location.reload()
+      router.refresh()
     } catch (error) {
       console.error("Failed to delete post:", error)
     } finally {
@@ -176,7 +239,7 @@ export default function DashboardClient({
         excerpt: post.excerpt,
         categoryId: post.categoryId || "00000000-0000-0000-0000-000000000000",
       });
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       console.error("Failed to publish post:", error);
     } finally {
@@ -216,6 +279,21 @@ export default function DashboardClient({
       </button>
       <button
         className={`flex items-center gap-3 p-4 text-sm transition-all duration-200 hover:bg-primary/10 rounded-md mx-2 my-1 ${
+          activeTab === "competitions" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
+        }`}
+        onClick={() => {
+          setActiveTab("competitions")
+          setSidebarOpen(false)
+        }}
+      >
+        <Trophy className="h-5 w-5" />
+        Competitions
+        <span className="ml-auto bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full">
+          {competitions.length}
+        </span>
+      </button>
+      <button
+        className={`flex items-center gap-3 p-4 text-sm transition-all duration-200 hover:bg-primary/10 rounded-md mx-2 my-1 ${
           activeTab === "profile" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground"
         }`}
         onClick={() => {
@@ -251,6 +329,7 @@ export default function DashboardClient({
             <h1 className="text-2xl font-bold">
               {activeTab === "writeups" && "My Writeups"}
               {activeTab === "drafts" && "My Drafts"}
+              {activeTab === "competitions" && "Competitions"}
               {activeTab === "profile" && "My Profile"}
               {activeTab === "settings" && "Settings"}
             </h1>
@@ -348,6 +427,10 @@ export default function DashboardClient({
                         <span className="text-sm font-mono">{draftPosts.length}</span>
                       </div>
                       <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Competitions</span>
+                        <span className="text-sm font-mono">{competitions.length}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
                         <span className="text-xs text-muted-foreground">Total</span>
                         <span className="text-sm font-mono">{posts.length}</span>
                       </div>
@@ -358,7 +441,7 @@ export default function DashboardClient({
             </aside>
 
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
                 <div className="hidden md:block">
                   <h1 className="text-3xl font-bold flex items-center gap-2">
                     {activeTab === "writeups" && (
@@ -371,6 +454,12 @@ export default function DashboardClient({
                       <>
                         <PenLine className="h-6 w-6 text-primary" />
                         My Drafts
+                      </>
+                    )}
+                    {activeTab === "competitions" && (
+                      <>
+                        <Trophy className="h-6 w-6 text-primary" />
+                        Competitions
                       </>
                     )}
                     {activeTab === "profile" && (
@@ -389,29 +478,49 @@ export default function DashboardClient({
                   <p className="text-sm text-muted-foreground mt-1">
                     {activeTab === "writeups" && "Manage your published CTF writeups"}
                     {activeTab === "drafts" && "Continue working on your draft writeups"}
+                    {activeTab === "competitions" && "Seed competitions and manage participants"}
                     {activeTab === "profile" && "Update your profile information"}
                     {activeTab === "settings" && "Configure your account settings"}
                   </p>
                 </div>
 
-                {(activeTab === "writeups" || activeTab === "drafts") && (
-                  <Link href="/dashboard/new" className="ml-auto">
-                    <Button variant="default" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden sm:inline">New Writeup</span>
-                      <span className="sm:hidden">New</span>
-                    </Button>
-                  </Link>
+                {showPostTools && (
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center md:ml-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={activeTab === "drafts" ? "Search drafts..." : "Search writeups..."}
+                        className="pl-10 bg-black/70 border-primary/30 focus:border-primary"
+                      />
+                    </div>
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as "newest" | "oldest")}
+                      className="h-10 rounded-md border border-primary/30 bg-black/70 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    >
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                    </select>
+                    <Link href="/dashboard/new">
+                      <Button variant="default" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">New Writeup</span>
+                        <span className="sm:hidden">New</span>
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
 
               {activeTab === "writeups" && (
                 <div className="space-y-6">
-                  {publishedPosts.length > 0 ? (
-                    publishedPosts.map((post) => (
+                  {filteredPublishedPosts.length > 0 ? (
+                    filteredPublishedPosts.map((post) => (
                       <div key={post.id} className="group relative">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <Card className="relative border-primary/30 bg-black/80 backdrop-blur-sm overflow-hidden transition-all duration-300 group-hover:border-primary/50">
+                        <Card className="relative border-primary/30 bg-black/80 backdrop-blur-sm overflow-hidden">
                           <div className="flex flex-col md:flex-row">
                             <CardHeader className="flex-1 p-4 md:p-6">
                               <div className="flex flex-wrap gap-2 mb-3">
@@ -550,7 +659,7 @@ export default function DashboardClient({
                         </Card>
                       </div>
                     ))
-                  ) : (
+                  ) : publishedPosts.length === 0 ? (
                     <div className="relative">
                       <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm"></div>
                       <Card className="relative border-primary/30 bg-black/80 backdrop-blur-sm">
@@ -576,17 +685,33 @@ export default function DashboardClient({
                         </CardFooter>
                       </Card>
                     </div>
+                  ) : (
+                    <Card className="border-primary/30 bg-black/80 backdrop-blur-sm">
+                      <CardHeader className="text-center py-8">
+                        <CardTitle className="text-lg">No matching writeups</CardTitle>
+                        <CardDescription>Try a different search or clear the filter.</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="flex justify-center pb-8">
+                        <Button
+                          variant="outline"
+                          className="border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          Clear search
+                        </Button>
+                      </CardFooter>
+                    </Card>
                   )}
                 </div>
               )}
 
               {activeTab === "drafts" && (
                 <div className="space-y-6">
-                  {draftPosts.length > 0 ? (
-                    draftPosts.map((post) => (
+                  {filteredDraftPosts.length > 0 ? (
+                    filteredDraftPosts.map((post) => (
                       <div key={post.id} className="group relative">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <Card className="relative border-primary/30 bg-black/80 backdrop-blur-sm overflow-hidden transition-all duration-300 group-hover:border-primary/50">
+                        <Card className="relative border-primary/30 bg-black/80 backdrop-blur-sm overflow-hidden">
                           <div className="flex flex-col md:flex-row">
                             <CardHeader className="flex-1 p-4 md:p-6">
                               <div className="flex flex-wrap gap-2 mb-3">
@@ -721,7 +846,7 @@ export default function DashboardClient({
                         </Card>
                       </div>
                     ))
-                  ) : (
+                  ) : draftPosts.length === 0 ? (
                     <div className="relative">
                       <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm"></div>
                       <Card className="relative border-primary/30 bg-black/80 backdrop-blur-sm">
@@ -747,6 +872,151 @@ export default function DashboardClient({
                         </CardFooter>
                       </Card>
                     </div>
+                  ) : (
+                    <Card className="border-primary/30 bg-black/80 backdrop-blur-sm">
+                      <CardHeader className="text-center py-8">
+                        <CardTitle className="text-lg">No matching drafts</CardTitle>
+                        <CardDescription>Try a different search or clear the filter.</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="flex justify-center pb-8">
+                        <Button
+                          variant="outline"
+                          className="border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          Clear search
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {activeTab === "competitions" && (
+                <div className="space-y-6">
+                  <Card className="border-primary/30 bg-black/80 backdrop-blur-sm">
+                    <CardHeader className="border-b border-primary/20 bg-primary/5">
+                      <CardTitle className="flex items-center gap-2">
+                        <Trophy className="h-5 w-5 text-primary" />
+                        Seed a Competition
+                      </CardTitle>
+                      <CardDescription>Create a competition entry to start linking writeups and participants.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <form action={createCompetition} className="flex flex-col sm:flex-row gap-3">
+                        <Input
+                          name="name"
+                          placeholder="DEFCON CTF 2025"
+                          className="bg-black/70 border-primary/30 focus:border-primary"
+                          required
+                        />
+                        <Button type="submit" className="sm:w-auto w-full">
+                          Seed Competition
+                        </Button>
+                      </form>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="relative w-full sm:w-72">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={competitionQuery}
+                        onChange={(e) => setCompetitionQuery(e.target.value)}
+                        placeholder="Search competitions or participants..."
+                        className="pl-10 bg-black/70 border-primary/30 focus:border-primary"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {filteredCompetitions.length} competition{filteredCompetitions.length === 1 ? "" : "s"}
+                    </div>
+                  </div>
+
+                  {filteredCompetitions.length > 0 ? (
+                    <div className="grid gap-6">
+                      {filteredCompetitions.map((competition) => (
+                        <Card key={competition.id} className="border-primary/30 bg-black/80 backdrop-blur-sm">
+                          <CardHeader className="border-b border-primary/20 bg-primary/5">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <Trophy className="h-4 w-4 text-primary" />
+                                  {competition.name}
+                                </CardTitle>
+                                <CardDescription>
+                                  {competition.participants.length} participant
+                                  {competition.participants.length === 1 ? "" : "s"}
+                                </CardDescription>
+                              </div>
+                              <Link href={`/competitions/${encodeURIComponent(competition.name)}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-primary/30 text-primary hover:bg-primary/10"
+                                >
+                                  View Competition
+                                </Button>
+                              </Link>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-6 space-y-4">
+                            {competition.participants.length === 0 ? (
+                              <div className="text-sm text-muted-foreground">No participants added yet.</div>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {competition.participants.map((participant) => (
+                                  <Badge
+                                    key={participant.id}
+                                    variant="outline"
+                                    className="border-primary/30 text-primary bg-primary/5"
+                                  >
+                                    {participant.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            <form action={addCompetitionParticipant} className="flex flex-col sm:flex-row gap-3">
+                              <input type="hidden" name="competitionId" value={competition.id} />
+                              <input type="hidden" name="competitionName" value={competition.name} />
+                              <Input
+                                name="name"
+                                placeholder="Add participant name"
+                                className="bg-black/70 border-primary/30 focus:border-primary"
+                                required
+                              />
+                              <Button type="submit" className="sm:w-auto w-full gap-2">
+                                <Users className="h-4 w-4" />
+                                Add Participant
+                              </Button>
+                            </form>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : competitions.length === 0 ? (
+                    <Card className="border-primary/30 bg-black/80 backdrop-blur-sm">
+                      <CardHeader className="text-center py-8">
+                        <CardTitle className="text-lg">No competitions yet</CardTitle>
+                        <CardDescription>Seed a new competition to get started.</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ) : (
+                    <Card className="border-primary/30 bg-black/80 backdrop-blur-sm">
+                      <CardHeader className="text-center py-8">
+                        <CardTitle className="text-lg">No matching competitions</CardTitle>
+                        <CardDescription>Try a different search or clear the filter.</CardDescription>
+                      </CardHeader>
+                      <CardFooter className="flex justify-center pb-8">
+                        <Button
+                          variant="outline"
+                          className="border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => setCompetitionQuery("")}
+                        >
+                          Clear search
+                        </Button>
+                      </CardFooter>
+                    </Card>
                   )}
                 </div>
               )}

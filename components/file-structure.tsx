@@ -29,14 +29,14 @@ function isReadmeLikePost(post: { title?: string; slug?: string }) {
 
 export default function FileStructure({ competitions }: FileStructureProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [tagPosts, setTagPosts] = useState<Record<string, any[]>>({});
+  const [competitionPosts, setCompetitionPosts] = useState<Record<string, any[]>>({});
 
-  const toggleTag = async (tagId: string) => {
-    setExpanded((prev) => ({ ...prev, [tagId]: !prev[tagId] }));
-    if (!tagPosts[tagId]) {
-      const res = await fetch(`/api/posts?tagId=${tagId}`);
+  const toggleCompetition = async (competitionId: string) => {
+    setExpanded((prev) => ({ ...prev, [competitionId]: !prev[competitionId] }));
+    if (!competitionPosts[competitionId]) {
+      const res = await fetch(`/api/posts?competitionId=${competitionId}`);
       const data = await res.json();
-      setTagPosts((prev) => ({ ...prev, [tagId]: data }));
+      setCompetitionPosts((prev) => ({ ...prev, [competitionId]: data }));
     }
   };
 
@@ -51,12 +51,12 @@ export default function FileStructure({ competitions }: FileStructureProps) {
           <div className="flex items-center gap-2 text-white mb-2">
             {expanded[competition.id] ? (
               <ChevronDown
-                onClick={() => toggleTag(competition.id)}
+                onClick={() => toggleCompetition(competition.id)}
                 className="h-4 w-4 text-primary cursor-pointer"
               />
             ) : (
               <ChevronRight
-                onClick={() => toggleTag(competition.id)}
+                onClick={() => toggleCompetition(competition.id)}
                 className="h-4 w-4 text-primary cursor-pointer"
               />
             )}
@@ -81,8 +81,8 @@ export default function FileStructure({ competitions }: FileStructureProps) {
                 <span>README.md</span>
               </Link>
 
-              {tagPosts[competition.id] ? (
-                tagPosts[competition.id]
+              {competitionPosts[competition.id] ? (
+                competitionPosts[competition.id]
                   .filter((post) => !isReadmeLikePost(post))
                   .map((post, index) => (
                     <Link

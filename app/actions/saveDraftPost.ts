@@ -54,11 +54,17 @@ export async function saveDraftPost(data: {
   title: string;
   categoryId: string;
   content: string;
+  competitionId?: string | null;
+  solveScript?: string;
   authorId: string;
   draftId?: string | null;
   tags?: string[];
 }) {
   const categoryUUID = await resolveCategoryUUID(data.categoryId);
+  const competitionId = data.competitionId?.trim();
+  if (competitionId && !isValidUUID(competitionId)) {
+    throw new Error("Invalid competition identifier provided.");
+  }
   const excerpt =
     data.content.substring(0, 150) + (data.content.length > 150 ? "..." : "");
 
@@ -69,6 +75,8 @@ export async function saveDraftPost(data: {
         title: data.title,
         categoryId: categoryUUID,
         content: data.content,
+        solveScript: data.solveScript,
+        competitionId: competitionId || null,
         excerpt,
         updatedAt: new Date(),
       })
@@ -120,6 +128,8 @@ export async function saveDraftPost(data: {
         slug,
         excerpt,
         content: data.content,
+        solveScript: data.solveScript,
+        competitionId: competitionId || null,
         categoryId: categoryUUID,
         authorId: data.authorId,
         isDraft: true,

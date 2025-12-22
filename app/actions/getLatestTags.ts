@@ -1,27 +1,27 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tags, post_tags, posts } from "@/drizzle/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { competitions, posts } from "@/drizzle/schema";
+import { eq, sql, desc, and } from "drizzle-orm";
 
 export async function getLatestCompetitions(limit: number = 5) {
-  const competitions = await db
+  const rows = await db
     .select({
-      id: tags.id,
-      name: tags.name,
+      id: competitions.id,
+      name: competitions.name,
       latestPost: sql<Date>`MAX(${posts.createdAt})`.as("latestPost"),
       postCount: sql<number>`COUNT(${posts.id})`.as("postCount"),
     })
-    .from(tags)
-    .leftJoin(post_tags, eq(tags.id, post_tags.tagId))
-    .leftJoin(posts, eq(post_tags.postId, posts.id))
-    .where(eq(posts.isDraft, false))
-    .groupBy(tags.id)
+    .from(competitions)
+    .leftJoin(posts, and(eq(posts.competitionId, competitions.id), eq(posts.isDraft, false)))
+    .groupBy(competitions.id)
     .orderBy(desc(sql`MAX(${posts.createdAt})`))
     .limit(limit);
 
-    return competitions.map((comp) => ({
-      ...comp,
-      latestPost: comp.latestPost ? new Date(comp.latestPost).toISOString() : null,
-    }));    
+  return rows.map((comp) => ({
+    id: comp.id,
+    name: comp.name,
+    latestPost: comp.latestPost ? new Date(comp.latestPost).toISOString() : null,
+    postCount: comp.postCount,
+  }));
 }

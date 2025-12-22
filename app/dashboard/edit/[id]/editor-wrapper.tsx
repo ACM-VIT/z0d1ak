@@ -14,9 +14,11 @@ function EditorWrapper({ post }: { post: any }) {
         JSON.stringify({
           title: post.title,
           content: post.content,
+          solveScript: post.solveScript || "",
           excerpt: post.excerpt,
           isDraft: post.isDraft,
           category: post.categoryId,
+          competitionId: post.competitionId || "",
           tags: post.tags || [],
         })
       );

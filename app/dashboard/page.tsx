@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { getUserPosts } from "@/app/actions/getUserPosts";
+import { fetchCompetitions } from "@/app/actions/fetchCompetitions";
+import { getCompetitionParticipants } from "@/app/actions/competitionParticipants";
 import DashboardClient from "./dashboard-client";
 
 export default async function DashboardPage() {
@@ -12,5 +14,13 @@ export default async function DashboardPage() {
   }
 
   const posts = await getUserPosts(session.user.id);
-  return <DashboardClient session={session} posts={posts} />;
+  const competitions = await fetchCompetitions();
+  const competitionsWithParticipants = await Promise.all(
+    competitions.map(async (competition) => ({
+      ...competition,
+      participants: await getCompetitionParticipants(competition.id),
+    }))
+  );
+
+  return <DashboardClient session={session} posts={posts} competitions={competitionsWithParticipants} />;
 }
