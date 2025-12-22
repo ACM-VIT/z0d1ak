@@ -14,6 +14,19 @@ interface FileStructureProps {
   competitions: Competition[];
 }
 
+function isReadmeLikePost(post: { title?: string; slug?: string }) {
+  const title = (post.title || "").trim().toLowerCase();
+  const slug = (post.slug || "").trim().toLowerCase();
+
+  return (
+    title === "readme" ||
+    title === "readme.md" ||
+    slug === "readme" ||
+    slug.endsWith("-readme") ||
+    slug.endsWith("-readme-md")
+  );
+}
+
 export default function FileStructure({ competitions }: FileStructureProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [tagPosts, setTagPosts] = useState<Record<string, any[]>>({});
@@ -60,21 +73,27 @@ export default function FileStructure({ competitions }: FileStructureProps) {
           </div>
           {expanded[competition.id] && (
             <div className="ml-4 border-l border-primary/30 pl-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <Link
+                href={`/competitions/${encodeURIComponent(competition.name)}#readme`}
+                className="flex items-center gap-2 text-muted-foreground hover:underline"
+              >
                 <File className="h-4 w-4" />
                 <span>README.md</span>
-              </div>
+              </Link>
+
               {tagPosts[competition.id] ? (
-                tagPosts[competition.id].map((post, index) => (
-                  <Link
-                    key={post.id || index}
-                    href={`/writeups/${post.slug}`}
-                    className="flex items-center gap-2 text-muted-foreground hover:underline"
-                  >
-                    <File className="h-4 w-4" />
-                    <span>{post.title}</span>
-                  </Link>
-                ))
+                tagPosts[competition.id]
+                  .filter((post) => !isReadmeLikePost(post))
+                  .map((post, index) => (
+                    <Link
+                      key={post.id || index}
+                      href={`/writeups/${post.slug}`}
+                      className="flex items-center gap-2 text-muted-foreground hover:underline"
+                    >
+                      <File className="h-4 w-4" />
+                      <span>{post.title}</span>
+                    </Link>
+                  ))
               ) : (
                 <div className="ml-4">Loading posts...</div>
               )}
