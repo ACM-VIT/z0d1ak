@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts, categories, users, post_tags, tags } from "@/drizzle/schema";
-import { eq, desc, like, and, count, sql } from "drizzle-orm";
+import { posts, categories, users } from "@/drizzle/schema";
+import { eq, desc, like, and, count } from "drizzle-orm";
+import { getTagsForPosts } from "@/app/actions/getTagsForPosts";
 
 export interface FetchPostsParams {
   page?: number;
@@ -17,8 +18,6 @@ export async function fetchAllPosts({
   categoryId,
   search,
 }: FetchPostsParams = {}) {
-  console.log("fetchAllPosts called with:", { page, limit, categoryId, search });
-
   const offset = (page - 1) * limit;
   const conditions = [eq(posts.isDraft, false)];
 
@@ -42,20 +41,11 @@ export async function fetchAllPosts({
       author: {
         name: users.name,
       },
-      tags: sql<string>`
-        COALESCE(
-          array_to_json(array_remove(array_agg(DISTINCT ${tags.name}), null)),
-          '[]'
-        )
-      `.as("tags"),
     })
     .from(posts)
     .leftJoin(categories, eq(posts.categoryId, categories.id))
     .leftJoin(users, eq(posts.authorId, users.id))
-    .leftJoin(post_tags, eq(posts.id, post_tags.postId))
-    .leftJoin(tags, eq(post_tags.tagId, tags.id))
     .where(whereCondition)
-    .groupBy(posts.id, categories.name, users.name)
     .orderBy(desc(posts.createdAt))
     .limit(limit)
     .offset(offset);
@@ -67,17 +57,12 @@ export async function fetchAllPosts({
 
   const totalCount = countResult[0]?.total ?? 0;
 
-  console.log("fetchAllPosts posts:", postsResult, "totalCount:", totalCount);
+  const tagMap = await getTagsForPosts(postsResult.map((post) => post.id));
 
   const formattedPosts = postsResult.map((post) => ({
     ...post,
     createdAt: post.createdAt?.toISOString() ?? "",
-    tags:
-      typeof post.tags === "string" && post.tags.length > 0
-        ? JSON.parse(post.tags)
-        : Array.isArray(post.tags)
-        ? post.tags
-        : [],
+    tags: tagMap[post.id] ?? [],
   }));
 
   return { posts: formattedPosts, totalCount, page, limit };

@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { posts, post_tags, tags } from "@/drizzle/schema";
-import { eq, not, and, desc, sql } from "drizzle-orm";
+import { posts } from "@/drizzle/schema";
+import { eq, not, and, desc } from "drizzle-orm";
+import { getTagsForPosts } from "@/app/actions/getTagsForPosts";
 
 export async function getRelatedPosts(currentPostId: string, categoryId: string, limit = 2) {
   const result = await db
@@ -12,16 +13,8 @@ export async function getRelatedPosts(currentPostId: string, categoryId: string,
       slug: posts.slug,
       excerpt: posts.excerpt,
       createdAt: posts.createdAt,
-      tags: sql<string>`
-        COALESCE(
-          array_to_json(array_remove(array_agg(DISTINCT ${tags.name}), null)),
-          '[]'
-        )
-      `.as("tags"),
     })
     .from(posts)
-    .leftJoin(post_tags, eq(posts.id, post_tags.postId))
-    .leftJoin(tags, eq(post_tags.tagId, tags.id))
     .where(
       and(
         eq(posts.categoryId, categoryId),
@@ -29,18 +22,14 @@ export async function getRelatedPosts(currentPostId: string, categoryId: string,
         eq(posts.isDraft, false)
       )
     )
-    .groupBy(posts.id)
     .orderBy(desc(posts.createdAt))
     .limit(limit);
+
+  const tagMap = await getTagsForPosts(result.map((post) => post.id));
 
   return result.map((post) => ({
     ...post,
     createdAt: post.createdAt?.toISOString() ?? "",
-    tags:
-      typeof post.tags === "string" && post.tags.length > 0
-        ? JSON.parse(post.tags)
-        : Array.isArray(post.tags)
-        ? post.tags
-        : [],
+    tags: tagMap[post.id] ?? [],
   }));
 }
