@@ -81,7 +81,7 @@ const ChallengeNode = ({
       transition: {
         duration: 2 / pulseSpeed,
         repeat: Number.POSITIVE_INFINITY,
-        ease: "easeInOut",
+        ease: [0.42, 0, 0.58, 1] as const,
       },
     },
   }
