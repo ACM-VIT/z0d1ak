@@ -1,36 +1,49 @@
-import type React from "react"
-import { notFound } from "next/navigation"
-import { SiteHeader } from "@/components/site-header"
-import { formatDate } from "@/lib/utils"
-import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Calendar, Tag, User, ChevronLeft, Shield, Clock, FileText, ExternalLink, Code, Zap, Trophy } from "lucide-react"
-import { getPostBySlug } from "@/app/actions/getPost"
-import { getRelatedPosts } from "@/app/actions/getRelatedPosts"
-import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import remarkBreaks from "remark-breaks"
-import remarkMath from "remark-math"
-import rehypeKatex from "rehype-katex"
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
+import type React from "react";
+import { notFound } from "next/navigation";
+import { SiteHeader } from "@/components/site-header";
+import { formatDate } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import {
+  Calendar,
+  Tag,
+  User,
+  ChevronLeft,
+  Shield,
+  Clock,
+  FileText,
+  ExternalLink,
+  Code,
+  Zap,
+  Trophy,
+} from "lucide-react";
+import { getPostBySlug } from "@/app/actions/getPost";
+import { getRelatedPosts } from "@/app/actions/getRelatedPosts";
+import { fetchCategoriesAction } from "@/app/actions/fetchCategories";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-import SidebarTableOfContents from "@/components/table-of-contents"
-import LikeComments from "@/components/like-comments"
+import SidebarTableOfContents from "@/components/table-of-contents";
 
 type HeadingProps = React.HTMLAttributes<HTMLHeadingElement> & {
-  children?: React.ReactNode
-}
+  children?: React.ReactNode;
+};
 
 const addIdToHeadings = {
   h1: ({ children, ...props }: HeadingProps) => {
-    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const text = Array.isArray(children)
+      ? children.join("")
+      : (children || "").toString();
     const id = text
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
+      .replace(/\s+/g, "-");
     return (
       <h1
         id={id}
@@ -39,14 +52,16 @@ const addIdToHeadings = {
       >
         <span className="text-primary">#</span> {children}
       </h1>
-    )
+    );
   },
   h2: ({ children, ...props }: HeadingProps) => {
-    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const text = Array.isArray(children)
+      ? children.join("")
+      : (children || "").toString();
     const id = text
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
+      .replace(/\s+/g, "-");
     return (
       <h2
         id={id}
@@ -55,61 +70,81 @@ const addIdToHeadings = {
       >
         <span className="text-primary">##</span> {children}
       </h2>
-    )
+    );
   },
   h3: ({ children, ...props }: HeadingProps) => {
-    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const text = Array.isArray(children)
+      ? children.join("")
+      : (children || "").toString();
     const id = text
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
+      .replace(/\s+/g, "-");
     return (
-      <h3 id={id} className="text-xl font-bold mt-5 mb-2 flex items-center gap-2" {...props}>
+      <h3
+        id={id}
+        className="text-xl font-bold mt-5 mb-2 flex items-center gap-2"
+        {...props}
+      >
         <span className="text-primary">###</span> {children}
       </h3>
-    )
+    );
   },
   h4: ({ children, ...props }: HeadingProps) => {
-    const text = Array.isArray(children) ? children.join("") : (children || "").toString()
+    const text = Array.isArray(children)
+      ? children.join("")
+      : (children || "").toString();
     const id = text
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
+      .replace(/\s+/g, "-");
     return (
-      <h4 id={id} className="text-lg font-bold mt-4 mb-2 flex items-center gap-2" {...props}>
+      <h4
+        id={id}
+        className="text-lg font-bold mt-4 mb-2 flex items-center gap-2"
+        {...props}
+      >
         <span className="text-primary">####</span> {children}
       </h4>
-    )
+    );
   },
-}
+};
+
+type Category = {
+  id: string;
+  name: string;
+};
 
 interface WriteupPageProps {
   params: Promise<{
-    slug: string
-  }>
+    slug: string;
+  }>;
 }
 
 export default async function WriteupPage({ params }: WriteupPageProps) {
-  const { slug } = await params
-  const post = await getPostBySlug(slug)
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
 
   if (!post) {
-    notFound()
+    notFound();
   }
 
-  const postCreatedAt = post.createdAt ?? new Date()
-  const postCategoryName = post.category ?? ""
-  const authorData = post.author as { name: string; image?: string } | null
-  const authorName = authorData?.name || "Unknown Author"
-  const solveScript = typeof post.solveScript === "string" ? post.solveScript.trim() : ""
-  const competitionName = post.competitionName ?? ""
+  const postCreatedAt = post.createdAt ?? new Date();
+  const postCategoryName = post.category ?? "";
+  const authorData = post.author as { name: string; image?: string } | null;
+  const authorName = authorData?.name || "Unknown Author";
+  const solveScript =
+    typeof post.solveScript === "string" ? post.solveScript.trim() : "";
+  const competitionName = post.competitionName ?? "";
 
-  const categoriesList = await fetchCategoriesAction()
+  const categoriesList: Category[] = await fetchCategoriesAction();
 
-  const matchedCategory = categoriesList.find((c) => c.name.toLowerCase() === postCategoryName.toLowerCase())
-  const postCategoryId = matchedCategory?.id || ""
+  const matchedCategory = categoriesList.find(
+    (c) => c.name.toLowerCase() === postCategoryName.toLowerCase(),
+  );
+  const postCategoryId = matchedCategory?.id || "";
 
-  const relatedPosts = await getRelatedPosts(post.id, postCategoryId)
+  const relatedPosts = await getRelatedPosts(post.id, postCategoryId);
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
@@ -141,31 +176,33 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                   <div className="h-3 w-3 rounded-full bg-destructive"></div>
                   <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
                   <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                  <div className="ml-2 text-xs text-muted-foreground font-mono">writeup.md - z0d1ak@ctf</div>
+                  <div className="ml-2 text-xs text-muted-foreground font-mono">
+                    writeup.md - z0d1ak@ctf
+                  </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-4 md:p-6">
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
+                    <div className="rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
                       <Tag className="h-3 w-3" />
                       {matchedCategory?.name || postCategoryName}
                     </div>
                     {competitionName ? (
                       <Link
                         href={`/competitions/${encodeURIComponent(competitionName)}`}
-                        className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30 hover:bg-primary/20 transition-colors"
+                        className="rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30 hover:bg-primary/20 transition-colors"
                       >
                         <Trophy className="h-3 w-3" />
                         {competitionName}
                       </Link>
                     ) : null}
-                    <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
+                    <div className="rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
                       <Calendar className="h-3 w-3" />
                       {formatDate(postCreatedAt)}
                     </div>
-                    <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
+                    <div className="rounded-full bg-primary/10 px-3 py-1 text-xs flex items-center gap-1 text-primary border border-primary/30">
                       <Clock className="h-3 w-3" />
                       {Math.ceil(post.content.length / 1000)} min read
                     </div>
@@ -194,7 +231,9 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium text-white">{authorName}</div>
+                        <div className="text-sm font-medium text-white">
+                          {authorName}
+                        </div>
                         <Shield className="h-4 w-4 text-primary" />
                       </div>
                       <div className="text-xs text-muted-foreground font-mono">
@@ -220,10 +259,24 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                 rehypePlugins={[rehypeKatex]}
                 components={{
                   ...addIdToHeadings,
-                  br: ({ ...props }) => <br className="block mt-3" {...props} />,
-                  p: ({ ...props }) => <p className="mb-4 leading-relaxed text-base md:text-lg" {...props} />,
-                  ul: ({ ...props }) => <ul className="list-disc pl-8 mb-4 space-y-2" {...props} />,
-                  ol: ({ ...props }) => <ol className="list-decimal pl-8 mb-4 space-y-2" {...props} />,
+                  br: ({ ...props }) => (
+                    <br className="block mt-3" {...props} />
+                  ),
+                  p: ({ ...props }) => (
+                    <p
+                      className="mb-4 leading-relaxed text-base md:text-lg"
+                      {...props}
+                    />
+                  ),
+                  ul: ({ ...props }) => (
+                    <ul className="list-disc pl-8 mb-4 space-y-2" {...props} />
+                  ),
+                  ol: ({ ...props }) => (
+                    <ol
+                      className="list-decimal pl-8 mb-4 space-y-2"
+                      {...props}
+                    />
+                  ),
                   li: ({ ...props }) => <li className="mb-1" {...props} />,
                   blockquote: ({ ...props }) => (
                     <blockquote
@@ -231,16 +284,23 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                       {...props}
                     />
                   ),
-                  hr: ({ ...props }) => <hr className="my-6 border-primary/20" {...props} />,
+                  hr: ({ ...props }) => (
+                    <hr className="my-6 border-primary/20" {...props} />
+                  ),
                   table: ({ ...props }) => (
                     <div className="overflow-x-auto mb-4">
                       <table className="w-full border-collapse" {...props} />
                     </div>
                   ),
                   th: ({ ...props }) => (
-                    <th className="border border-primary/20 p-2 font-semibold bg-primary/10" {...props} />
+                    <th
+                      className="border border-primary/20 p-2 font-semibold bg-primary/10"
+                      {...props}
+                    />
                   ),
-                  td: ({ ...props }) => <td className="border border-primary/20 p-2" {...props} />,
+                  td: ({ ...props }) => (
+                    <td className="border border-primary/20 p-2" {...props} />
+                  ),
                   a: ({ ...props }) => (
                     <a
                       className="text-primary no-underline border-b border-dotted border-primary/50 hover:border-primary transition-colors pb-0.5 inline-flex items-center gap-1"
@@ -254,11 +314,14 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                   ),
                   img: ({ ...props }) => (
                     <span className="block my-6 rounded-lg overflow-hidden border border-primary/30 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-                      <img className="max-w-full h-auto rounded-lg" {...props} />
+                      <img
+                        className="max-w-full h-auto rounded-lg"
+                        {...props}
+                      />
                     </span>
                   ),
                   code({ inline, className, children, ...props }: any) {
-                    const match = /language-(\w+)/.exec(className || "")
+                    const match = /language-(\w+)/.exec(className || "");
                     return !inline && match ? (
                       <div className="relative my-6 group">
                         <div className="absolute -inset-2 bg-primary/10 rounded-lg blur-sm opacity-50 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -283,7 +346,8 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                               {
                                 margin: 0,
                                 borderRadius: "0 0 0.5rem 0.5rem",
-                                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                                boxShadow:
+                                  "0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
                               } as React.CSSProperties
                             }
                             {...props}
@@ -293,12 +357,20 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                         </div>
                       </div>
                     ) : (
-                      <code className="bg-primary/10 px-1.5 py-0.5 rounded text-primary font-mono text-sm" {...props}>
+                      <code
+                        className="bg-primary/10 px-1.5 py-0.5 rounded text-primary font-mono text-sm"
+                        {...props}
+                      >
                         {children}
                       </code>
-                    )
+                    );
                   },
-                  pre: ({ ...props }) => <pre className="overflow-x-auto rounded-lg my-6" {...props} />,
+                  pre: ({ ...props }) => (
+                    <pre
+                      className="overflow-x-auto rounded-lg my-6"
+                      {...props}
+                    />
+                  ),
                 }}
               >
                 {post.content}
@@ -313,7 +385,9 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                 <div className="relative bg-black border border-primary/30 rounded-xl overflow-hidden">
                   <div className="bg-gray-900 px-4 py-2 flex items-center gap-2 border-b border-primary/20">
                     <Code className="h-4 w-4 text-primary" />
-                    <div className="text-xs text-muted-foreground font-mono">solve.sh - z0d1ak@ctf</div>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      solve.sh - z0d1ak@ctf
+                    </div>
                   </div>
                   <div className="p-2 md:p-4">
                     <SyntaxHighlighter
@@ -338,9 +412,6 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
             </div>
           ) : null}
 
-          {/* Like and Comments Section */}
-          <LikeComments postId={post.id} />
-
           {/* Related Posts */}
           {relatedPosts && relatedPosts.length > 0 && (
             <div className="mt-12 pt-6">
@@ -354,7 +425,11 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
 
                   <div className="grid gap-6 md:grid-cols-2">
                     {relatedPosts.map((relatedPost: any) => (
-                      <Link key={relatedPost.id} href={`/writeups/${relatedPost.slug}`} className="group">
+                      <Link
+                        key={relatedPost.id}
+                        href={`/writeups/${relatedPost.slug}`}
+                        className="group"
+                      >
                         <div className="relative">
                           <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           <div className="relative border border-primary/20 rounded-lg p-4 bg-black/80 hover:bg-black/50 transition-colors duration-300">
@@ -369,12 +444,16 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <User className="h-3 w-3" />
-                                <span>{relatedPost.authorName || "Unknown"}</span>
+                                <span>
+                                  {relatedPost.authorName || "Unknown"}
+                                </span>
                               </div>
                               <div className="h-1 w-1 rounded-full bg-primary/50" />
                               <div className="flex items-center gap-1">
                                 <Shield className="h-3 w-3" />
-                                <span>{relatedPost.categoryName || "Uncategorized"}</span>
+                                <span>
+                                  {relatedPost.categoryName || "Uncategorized"}
+                                </span>
                               </div>
                             </div>
                             {relatedPost.tags && relatedPost.tags.length > 0 ? (
@@ -382,7 +461,9 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                                 <Tag className="h-3 w-3" />
                                 <span>
                                   {relatedPost.tags.slice(0, 3).join(", ")}
-                                  {relatedPost.tags.length > 3 ? ` +${relatedPost.tags.length - 3}` : ""}
+                                  {relatedPost.tags.length > 3
+                                    ? ` +${relatedPost.tags.length - 3}`
+                                    : ""}
                                 </span>
                               </div>
                             ) : null}
@@ -401,5 +482,5 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
         </article>
       </main>
     </div>
-  )
+  );
 }

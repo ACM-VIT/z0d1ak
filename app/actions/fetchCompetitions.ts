@@ -1,15 +1,12 @@
-"use server"
+"use server";
 
-import { db } from "@/lib/db"
-import { competitions } from "@/drizzle/schema"
-import { asc } from "drizzle-orm"
+import { fetchCompetitionsFromWriteups } from "@/lib/writeups";
 
 export async function fetchCompetitions() {
-  return db
-    .select({
-      id: competitions.id,
-      name: competitions.name,
-    })
-    .from(competitions)
-    .orderBy(asc(competitions.name))
+  const competitions = await fetchCompetitionsFromWriteups();
+
+  return competitions.map((competition) => ({
+    id: competition.id,
+    name: competition.name,
+  }));
 }

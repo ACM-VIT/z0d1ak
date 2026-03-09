@@ -1,10 +1,10 @@
-import type React from "react"
-import { Button } from "@/components/ui/button"
-import { SiteHeader } from "@/components/site-header"
-import { TerminalText } from "@/components/terminal-text"
-import { GlitchText } from "@/components/glitch-text"
-import Link from "next/link"
-import { formatDate } from "@/lib/utils"
+import type React from "react";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
+import { TerminalText } from "@/components/terminal-text";
+import { GlitchText } from "@/components/glitch-text";
+import Link from "next/link";
+import { formatDate } from "@/lib/utils";
 import {
   Terminal,
   FileText,
@@ -18,69 +18,76 @@ import {
   Code,
   Zap,
   Search,
-} from "lucide-react"
-import { getLatestPosts } from "@/app/actions/getLatestPosts"
-import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
-import { getLatestCompetitions } from "@/app/actions/getLatestTags"
-import ReactMarkdown from "react-markdown"
-import { unstable_cache } from "next/cache"
+} from "lucide-react";
+import { getLatestPosts } from "@/app/actions/getLatestPosts";
+import { fetchCategoriesAction } from "@/app/actions/fetchCategories";
+import { getLatestCompetitionsFromWriteups } from "@/lib/writeups";
+import ReactMarkdown from "react-markdown";
+import { unstable_cache } from "next/cache";
 
 export interface Post {
-  id: string
-  title: string
-  slug: string
-  excerpt: string
-  createdAt: string
-  categoryName: string | null
-  author: { name: string } | null
-  tags: any[]
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  createdAt: string;
+  categoryName: string | null;
+  author: { name: string } | null;
+  tags: any[];
 }
 
 export interface Category {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 export interface Competition {
-  id: string
-  name: string
-  latestPost: string | null
-  postCount: number
+  id: string;
+  name: string;
+  latestPost: string | null;
+  postCount: number;
 }
 
 const getCachedLatestPosts = unstable_cache(
   async (count: number) => {
-    return getLatestPosts(count)
+    return getLatestPosts(count);
   },
   ["latest-posts"],
   { revalidate: 3600 },
-)
+);
 
 const getCachedCategories = unstable_cache(
   async () => {
-    return fetchCategoriesAction()
+    return fetchCategoriesAction();
   },
   ["categories"],
   { revalidate: 3600 },
-)
+);
 
 const getCachedCompetitions = unstable_cache(
   async (count: number) => {
-    return getLatestCompetitions(count)
+    return getLatestCompetitionsFromWriteups(count);
   },
   ["latest-competitions"],
   { revalidate: 3600 },
-)
+);
 
-function TerminalPrompt({ text, className = "" }: { text: string; className?: string }) {
+function TerminalPrompt({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
   return (
     <div className={`font-mono text-sm md:text-base ${className}`}>
       <span className="text-green-500">z0d1ak@ctf</span>
       <span className="text-muted-foreground">:</span>
       <span className="text-blue-500">~</span>
-      <span className="text-muted-foreground">$</span> <span className="text-primary">{text}</span>
+      <span className="text-muted-foreground">$</span>{" "}
+      <span className="text-primary">{text}</span>
     </div>
-  )
+  );
 }
 
 function TerminalWindow({
@@ -90,11 +97,11 @@ function TerminalWindow({
   fullWidth = false,
   maxHeight = "",
 }: {
-  title: string
-  children: React.ReactNode
-  className?: string
-  fullWidth?: boolean
-  maxHeight?: string
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  fullWidth?: boolean;
+  maxHeight?: string;
 }) {
   return (
     <div
@@ -107,11 +114,17 @@ function TerminalWindow({
         <div className="h-3 w-3 rounded-full bg-destructive"></div>
         <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
         <div className="h-3 w-3 rounded-full bg-green-500"></div>
-        <div className="ml-2 text-xs text-muted-foreground font-mono">{title}</div>
+        <div className="ml-2 text-xs text-muted-foreground font-mono">
+          {title}
+        </div>
       </div>
-      <div className={`p-4 md:p-6 font-mono ${maxHeight ? "overflow-auto" : ""}`}>{children}</div>
+      <div
+        className={`p-4 md:p-6 font-mono ${maxHeight ? "overflow-auto" : ""}`}
+      >
+        {children}
+      </div>
     </div>
-  )
+  );
 }
 
 function AsciiArt() {
@@ -120,14 +133,14 @@ function AsciiArt() {
       {`
  ███████╗ ██████╗ ██████╗  ██╗ █████╗ ██╗  ██╗
  ╚══███╔╝██╔═████╗██╔══██╗███║██╔══██╗██║ ██╔╝
-   ███╔╝ ██║██╔██║██║  ██║╚██║███████║█████╔╝ 
-  ███╔╝  ████╔╝██║██║  ██║ ██║██╔══██║██╔═██╗ 
+   ███╔╝ ██║██╔██║██║  ██║╚██║███████║█████╔╝
+  ███╔╝  ████╔╝██║██║  ██║ ██║██╔══██║██╔═██╗
  ███████╗╚██████╔╝██████╔╝ ██║██║  ██║██║  ██╗
  ╚══════╝ ╚═════╝ ╚═════╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-                                              
+
       `}
     </pre>
-  )
+  );
 }
 
 // Mobile Hero - simplified with just ASCII art and no redundant team name
@@ -182,7 +195,9 @@ function MobileHero() {
           </div>
 
           <TerminalPrompt text="./join_team.sh" />
-          <p className="text-primary animate-pulse">Initializing recruitment process...</p>
+          <p className="text-primary animate-pulse">
+            Initializing recruitment process...
+          </p>
         </div>
       </TerminalWindow>
 
@@ -205,7 +220,7 @@ function MobileHero() {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 function DesktopHero() {
@@ -232,7 +247,11 @@ function DesktopHero() {
 
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <Link href="/writeups">
-            <Button variant="hacker" size="lg" className="gap-2 w-full sm:w-auto">
+            <Button
+              variant="hacker"
+              size="lg"
+              className="gap-2 w-full sm:w-auto"
+            >
               <FileText className="h-4 w-4" />
               Browse Writeups
             </Button>
@@ -294,28 +313,36 @@ function DesktopHero() {
             <TerminalPrompt text="cat /etc/motd" />
             <div className="bg-primary/5 border-l-4 border-primary p-2 my-2">
               <p className="text-white">Welcome to the z0d1ak CTF team blog</p>
-              <p className="text-white">We hack, we learn, we share knowledge.</p>
+              <p className="text-white">
+                We hack, we learn, we share knowledge.
+              </p>
             </div>
 
             <TerminalPrompt text="cat /etc/banner" />
             <div className="bg-black/50 p-3 rounded border border-primary/20 my-2">
-              <p className="text-white">🔐 Specializing in web, crypto, and forensics</p>
-              <p className="text-white">🌐 Join our community of CTF enthusiasts</p>
+              <p className="text-white">
+                🔐 Specializing in web, crypto, and forensics
+              </p>
+              <p className="text-white">
+                🌐 Join our community of CTF enthusiasts
+              </p>
             </div>
 
             <TerminalPrompt text="./join_team.sh" />
-            <p className="text-primary animate-pulse">Initializing recruitment process...</p>
+            <p className="text-primary animate-pulse">
+              Initializing recruitment process...
+            </p>
           </div>
         </TerminalWindow>
       </div>
     </div>
-  )
+  );
 }
 
 export default async function Home() {
-  const latestPosts: Post[] = await getCachedLatestPosts(3)
-  const categoriesList: Category[] = await getCachedCategories()
-  const competitions: Competition[] = await getCachedCompetitions(5)
+  const latestPosts: Post[] = await getCachedLatestPosts(3);
+  const categoriesList: Category[] = await getCachedCategories();
+  const competitions: Competition[] = await getCachedCompetitions(5);
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-green-500">
@@ -339,7 +366,10 @@ export default async function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-black border border-primary/30 px-3 py-1 text-sm">
-                  <TerminalText text="$ ./list_competitions.sh" typingSpeed={50} />
+                  <TerminalText
+                    text="$ ./list_competitions.sh"
+                    typingSpeed={50}
+                  />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl text-white">
                   Active Competitions
@@ -353,20 +383,29 @@ export default async function Home() {
             <TerminalWindow title="competitions.log" className="mb-8">
               <div className="space-y-1">
                 <TerminalPrompt text="cat /var/log/competitions.log | sort -r | head -n 5" />
-                <p className="text-xs text-muted-foreground mb-4">Displaying latest 5 competition entries...</p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Displaying latest 5 competition entries...
+                </p>
 
                 <div className="space-y-6">
                   {competitions.map((competition, index) => (
-                    <div key={competition.id || index} className="border-b border-primary/20 pb-4 last:border-0">
+                    <div
+                      key={competition.id || index}
+                      className="border-b border-primary/20 pb-4 last:border-0"
+                    >
                       <div className="flex items-start gap-2 md:gap-4">
                         <div className="flex-shrink-0 w-6 md:w-8 text-center">
-                          <span className="text-primary font-bold">{index + 1}.</span>
+                          <span className="text-primary font-bold">
+                            {index + 1}.
+                          </span>
                         </div>
 
                         <div className="flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <Trophy className="h-5 w-5 text-yellow-500" />
-                            <h3 className="text-lg font-bold text-white">{competition.name}</h3>
+                            <h3 className="text-lg font-bold text-white">
+                              {competition.name}
+                            </h3>
                             <span className="bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full font-mono">
                               {competition.postCount} writeups
                             </span>
@@ -377,23 +416,32 @@ export default async function Home() {
                               <div className="flex items-center gap-2">
                                 <Clock className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">
-                                  Last updated: {formatDate(competition.latestPost)}
+                                  Last updated:{" "}
+                                  {formatDate(competition.latestPost)}
                                 </span>
                               </div>
                             )}
                             <div className="flex items-center gap-2">
                               <Flag className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-muted-foreground">Status: Active</span>
+                              <span className="text-muted-foreground">
+                                Status: Active
+                              </span>
                             </div>
                           </div>
 
                           <div className="font-mono text-xs bg-gray-900 p-2 rounded border border-primary/20 overflow-x-auto">
-                            <span className="text-blue-400">root@z0d1ak</span>:<span className="text-green-400">~</span>$ ./view_competition.sh --id={competition.id}
+                            <span className="text-blue-400">root@z0d1ak</span>:
+                            <span className="text-green-400">~</span>$
+                            ./view_competition.sh --id={competition.id}
                           </div>
 
                           <div className="flex justify-end">
                             <Link href={`/competitions/${competition.name}`}>
-                              <Button variant="link" size="sm" className="gap-1 text-primary hover:text-primary/80">
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="gap-1 text-primary hover:text-primary/80"
+                              >
                                 View Challenges
                                 <ChevronRight className="h-3 w-3" />
                               </Button>
@@ -431,7 +479,10 @@ export default async function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8 md:mb-12">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-black border border-primary/30 px-3 py-1 text-sm">
-                  <TerminalText text="$ ./fetch_writeups.sh --latest" typingSpeed={50} />
+                  <TerminalText
+                    text="$ ./fetch_writeups.sh --latest"
+                    typingSpeed={50}
+                  />
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl text-white">
                   Latest Writeups
@@ -445,7 +496,9 @@ export default async function Home() {
             <TerminalWindow title="writeups.sh" className="mb-8">
               <div className="space-y-1">
                 <TerminalPrompt text="./fetch_writeups.sh --latest=3 --format=detailed" />
-                <p className="text-xs text-muted-foreground mb-4">Fetching latest 3 writeups from database...</p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Fetching latest 3 writeups from database...
+                </p>
 
                 <div className="space-y-8">
                   {latestPosts.map((post: Post, index) => (
@@ -465,7 +518,9 @@ export default async function Home() {
                               </span>
                             </div>
                             <div className="flex items-center gap-2 ml-auto">
-                              <div className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatDate(post.createdAt)}
+                              </div>
                               {post.categoryName && (
                                 <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs">
                                   {post.categoryName}
@@ -476,15 +531,25 @@ export default async function Home() {
 
                           {/* Content */}
                           <div className="p-3 md:p-4">
-                            <h3 className="text-lg md:text-xl font-bold text-white mb-2">{post.title}</h3>
+                            <h3 className="text-lg md:text-xl font-bold text-white mb-2">
+                              {post.title}
+                            </h3>
 
                             <div className="bg-black/50 p-2 md:p-3 rounded border border-primary/20 mb-3 text-xs md:text-sm text-muted-foreground">
                               <ReactMarkdown
                                 components={{
-                                  h1: ({ node, ...props }) => <div {...props} />,
-                                  h2: ({ node, ...props }) => <div {...props} />,
-                                  h3: ({ node, ...props }) => <div {...props} />,
-                                  h4: ({ node, ...props }) => <div {...props} />,
+                                  h1: ({ node, ...props }) => (
+                                    <div {...props} />
+                                  ),
+                                  h2: ({ node, ...props }) => (
+                                    <div {...props} />
+                                  ),
+                                  h3: ({ node, ...props }) => (
+                                    <div {...props} />
+                                  ),
+                                  h4: ({ node, ...props }) => (
+                                    <div {...props} />
+                                  ),
                                   p: ({ node, ...props }) => <p {...props} />,
                                 }}
                               >
@@ -496,34 +561,48 @@ export default async function Home() {
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground" />
                                 <div className="text-sm text-muted-foreground">
-                                  Author: <span className="text-white">{post.author?.name || "Unknown"}</span>
+                                  Author:{" "}
+                                  <span className="text-white">
+                                    {post.author?.name || "Unknown"}
+                                  </span>
                                 </div>
                               </div>
 
                               {post.tags && post.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-2">
-                                  {post.tags.map((tag: any, tagIndex: number) => (
-                                    <div
-                                      key={tag.id || tagIndex}
-                                      className="flex items-center gap-1 text-xs bg-black/50 px-2 py-1 rounded"
-                                    >
-                                      <Tag className="h-3 w-3 text-primary" />
-                                      <span className="text-muted-foreground">{tag.name}</span>
-                                    </div>
-                                  ))}
+                                  {post.tags.map(
+                                    (tag: any, tagIndex: number) => (
+                                      <div
+                                        key={tag.id || tagIndex}
+                                        className="flex items-center gap-1 text-xs bg-black/50 px-2 py-1 rounded"
+                                      >
+                                        <Tag className="h-3 w-3 text-primary" />
+                                        <span className="text-muted-foreground">
+                                          {tag.name}
+                                        </span>
+                                      </div>
+                                    ),
+                                  )}
                                 </div>
                               )}
                             </div>
 
                             <div className="mt-4 pt-3 border-t border-primary/20">
                               <div className="font-mono text-xs bg-black p-2 rounded overflow-x-auto">
-                                <span className="text-blue-400">root@z0d1ak</span>:
-                                <span className="text-green-400">~</span>$ cat /writeups/{post.slug}.md
+                                <span className="text-blue-400">
+                                  root@z0d1ak
+                                </span>
+                                :<span className="text-green-400">~</span>$ cat
+                                /writeups/{post.slug}.md
                               </div>
 
                               <div className="flex justify-end mt-2">
                                 <Link href={`/writeups/${post.slug}`}>
-                                  <Button variant="link" size="sm" className="gap-1 text-primary hover:text-primary/80">
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="gap-1 text-primary hover:text-primary/80"
+                                  >
                                     Read full writeup
                                     <ChevronRight className="h-3 w-3" />
                                   </Button>
@@ -595,5 +674,5 @@ export default async function Home() {
         </section> */}
       </main>
     </div>
-  )
+  );
 }

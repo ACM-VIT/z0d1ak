@@ -1,76 +1,85 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { X, List, ChevronRight, Terminal } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { X, List, ChevronRight, Terminal } from "lucide-react";
 
 interface SidebarTableOfContentsProps {
-  content: string
-  className?: string
+  content: string;
+  className?: string;
 }
 
-export default function SidebarTableOfContents({ content, className = "" }: SidebarTableOfContentsProps) {
-  const [activeId, setActiveId] = useState("")
-  const [isOpen, setIsOpen] = useState(false)
+export default function SidebarTableOfContents({
+  content,
+  className = "",
+}: SidebarTableOfContentsProps) {
+  const [activeId, setActiveId] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
 
-  const cleanedContent = content.replace(/```[\s\S]*?```/g, "")
-  const headings = cleanedContent.match(/#{1,4}\s.+/g) || []
+  const cleanedContent = content.replace(/```[\s\S]*?```/g, "");
+  const headings = cleanedContent.match(/#{1,4}\s.+/g) || [];
   const toc = headings.map((heading) => {
-    const level = (heading.match(/^#+/) || [""])[0].length
-    const title = heading.replace(/^#+\s/, "")
+    const level = (heading.match(/^#+/) || [""])[0].length;
+    const title = heading.replace(/^#+\s/, "");
     const id = title
       .toLowerCase()
       .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-    return { level, title, id }
-  })
+      .replace(/\s+/g, "-");
+    return { level, title, id };
+  });
 
   useEffect(() => {
-    if (typeof window === "undefined") return
+    if (typeof window === "undefined") return;
 
-    const headingElements = Array.from(document.querySelectorAll("h1, h2, h3, h4"))
-    if (headingElements.length === 0) return
+    const headingElements = Array.from(
+      document.querySelectorAll("h1, h2, h3, h4"),
+    );
+    if (headingElements.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const visibleEntries = entries.filter((entry) => entry.isIntersecting)
+        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
         if (visibleEntries.length > 0) {
-          visibleEntries.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
-          setActiveId(visibleEntries[0].target.id)
+          visibleEntries.sort(
+            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
+          );
+          setActiveId(visibleEntries[0].target.id);
         }
       },
       {
         rootMargin: "-30% 0px -70% 0px",
         threshold: 0,
       },
-    )
+    );
 
-    headingElements.forEach((el) => observer.observe(el))
+    headingElements.forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect()
-  }, [content])
+    return () => observer.disconnect();
+  }, [content]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return
+    if (typeof window === "undefined") return;
 
     const onScroll = () => {
-      const scrollY = window.scrollY
-      const viewportHeight = window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
+      const scrollY = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
 
       if (scrollY + viewportHeight >= documentHeight - 50) {
-        const headingElements = Array.from(document.querySelectorAll("h1, h2, h3, h4"))
+        const headingElements = Array.from(
+          document.querySelectorAll("h1, h2, h3, h4"),
+        );
         if (headingElements.length > 0) {
-          setActiveId(headingElements[headingElements.length - 1].id)
+          setActiveId(headingElements[headingElements.length - 1].id);
         }
       }
-    }
+    };
 
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  if (toc.length === 0) return null
+  if (toc.length === 0) return null;
 
   return (
     <>
@@ -82,7 +91,11 @@ export default function SidebarTableOfContents({ content, className = "" }: Side
           className="rounded-full bg-black border border-primary/50 shadow-[0_0_15px_rgba(0,255,170,0.3)] hover:shadow-[0_0_20px_rgba(0,255,170,0.5)] transition-all duration-300"
           onClick={() => setIsOpen(!isOpen)}
         >
-          {isOpen ? <X className="h-5 w-5 text-primary" /> : <List className="h-5 w-5 text-primary" />}
+          {isOpen ? (
+            <X className="h-5 w-5 text-primary" />
+          ) : (
+            <List className="h-5 w-5 text-primary" />
+          )}
           <span className="sr-only">Toggle table of contents</span>
         </Button>
       </div>
@@ -90,10 +103,10 @@ export default function SidebarTableOfContents({ content, className = "" }: Side
       {/* Table of Contents Sidebar */}
       <div
         className={`
-          fixed z-40 h-screen top-24 right-0 transform 
+          fixed z-40 h-screen top-24 right-0 transform
           bg-black/90 backdrop-blur-md border-l border-primary/30
           w-72 transition-all duration-300 ease-in-out overflow-y-auto
-          ${isOpen ? "translate-x-0 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]" : "translate-x-full"} 
+          ${isOpen ? "translate-x-0 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]" : "translate-x-full"}
           md:translate-x-0 md:shadow-[-5px_0_20px_rgba(0,0,0,0.3)]
           ${className}
         `}
@@ -109,7 +122,8 @@ export default function SidebarTableOfContents({ content, className = "" }: Side
             <span className="text-green-500">z0d1ak@ctf</span>
             <span className="text-muted-foreground">:</span>
             <span className="text-blue-500">~</span>
-            <span className="text-muted-foreground">$</span> <span className="text-primary">cat sections.md</span>
+            <span className="text-muted-foreground">$</span>{" "}
+            <span className="text-primary">cat sections.md</span>
           </div>
         </div>
 
@@ -120,19 +134,20 @@ export default function SidebarTableOfContents({ content, className = "" }: Side
                 key={index}
                 href={`#${item.id}`}
                 onClick={(e) => {
-                  e.preventDefault()
-                  const element = document.getElementById(item.id)
+                  e.preventDefault();
+                  const element = document.getElementById(item.id);
                   if (element) {
-                    const offset = 80
-                    const elementPosition = element.getBoundingClientRect().top
-                    const offsetPosition = elementPosition + window.pageYOffset - offset
+                    const offset = 80;
+                    const elementPosition = element.getBoundingClientRect().top;
+                    const offsetPosition =
+                      elementPosition + window.pageYOffset - offset;
 
                     window.scrollTo({
                       top: offsetPosition,
                       behavior: "smooth",
-                    })
+                    });
                   }
-                  if (window.innerWidth < 768) setIsOpen(false)
+                  if (window.innerWidth < 768) setIsOpen(false);
                 }}
                 className={`
                   group flex items-center text-sm py-1.5 px-2 rounded-md transition-all duration-200
@@ -161,11 +176,11 @@ export default function SidebarTableOfContents({ content, className = "" }: Side
             <span className="text-green-500">z0d1ak@ctf</span>
             <span className="text-muted-foreground">:</span>
             <span className="text-blue-500">~</span>
-            <span className="text-muted-foreground">$</span> <span className="text-primary animate-pulse">_</span>
+            <span className="text-muted-foreground">$</span>{" "}
+            <span className="text-primary animate-pulse">_</span>
           </div>
         </div>
       </div>
     </>
-  )
+  );
 }
-

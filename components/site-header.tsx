@@ -1,37 +1,29 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Menu, TerminalIcon, X } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useSession, signOut } from "next-auth/react"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Menu, TerminalIcon, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function SiteHeader() {
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { data: session } = useSession()
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+      setIsScrolled(window.scrollY > 10);
+    };
 
-  const showDashboard = session?.user?.role === "member"
-
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' })
-  }
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header 
+    <header
       className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
-        isScrolled 
-          ? "border-primary/30 bg-black/90 backdrop-blur-md" 
+        isScrolled
+          ? "border-primary/30 bg-black/90 backdrop-blur-md"
           : "border-transparent bg-transparent"
       }`}
     >
@@ -46,74 +38,59 @@ export function SiteHeader() {
             <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-primary group-hover:w-full transition-all duration-300"></span>
           </span>
         </Link>
-        
+
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-1">
           <Link href="/writeups">
-            <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/10 px-3 h-9">
+            <Button
+              variant="ghost"
+              className="text-primary hover:text-primary hover:bg-primary/10 px-3 h-9"
+            >
               <span className="text-primary/70 mr-1.5">&gt;</span> Writeups
             </Button>
           </Link>
           <Link href="/competitions">
-            <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/10 px-3 h-9">
+            <Button
+              variant="ghost"
+              className="text-primary hover:text-primary hover:bg-primary/10 px-3 h-9"
+            >
               <span className="text-primary/70 mr-1.5">&gt;</span> Competitions
             </Button>
           </Link>
-          {showDashboard && (
-            <Link href="/dashboard">
-              <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/10 px-3 h-9">
-                <span className="text-primary/70 mr-1.5">&gt;</span> Dashboard
-              </Button>
-            </Link>
-          )}
-          {session ? (
-            <Button 
-              variant="outline" 
-              className="ml-2 text-primary border-primary/30 hover:bg-primary/10 hover:text-primary h-9"
-              onClick={handleLogout}
-            >
-              Logout
-            </Button>
-          ) : (
-            <Link href="/login">
-              <Button 
-                variant="outline" 
-                className="ml-2 text-primary border-primary/30 hover:bg-primary/10 hover:text-primary h-9"
-              >
-                Login
-              </Button>
-            </Link>
-          )}
         </nav>
-        
+
         {/* Mobile Navigation */}
         <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className={`text-primary hover:bg-primary/10 transition-colors ${isScrolled ? "" : "bg-black/50"}`}
             >
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent 
-            side="right" 
+          <SheetContent
+            side="right"
             className="bg-black border-l border-primary/20 text-primary p-0 w-[280px] sm:w-[350px]"
             onInteractOutside={() => setIsMenuOpen(false)}
           >
             <div className="flex flex-col h-full">
               <div className="border-b border-primary/20 p-4 flex items-center justify-between">
-                <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMenuOpen(false)}>
+                <Link
+                  href="/"
+                  className="flex items-center space-x-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 border border-primary/20">
                     <TerminalIcon className="h-4 w-4 text-primary" />
                   </div>
                   <span className="text-xl font-bold">z0d1ak</span>
                 </Link>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-primary hover:bg-primary/10"
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -121,54 +98,26 @@ export function SiteHeader() {
                 </Button>
               </div>
               <nav className="flex flex-col gap-0 flex-1">
-                <Link 
-                  href="/writeups" 
+                <Link
+                  href="/writeups"
                   className="p-4 hover:bg-primary/10 border-b border-primary/10 flex items-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <span className="text-primary/70 mr-2">&gt;</span> Writeups
                 </Link>
-                <Link 
-                  href="/competitions" 
+                <Link
+                  href="/competitions"
                   className="p-4 hover:bg-primary/10 border-b border-primary/10 flex items-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <span className="text-primary/70 mr-2">&gt;</span> Competitions
+                  <span className="text-primary/70 mr-2">&gt;</span>{" "}
+                  Competitions
                 </Link>
-                {showDashboard && (
-                  <Link 
-                    href="/dashboard" 
-                    className="p-4 hover:bg-primary/10 border-b border-primary/10 flex items-center"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <span className="text-primary/70 mr-2">&gt;</span> Dashboard
-                  </Link>
-                )}
-                <div className="mt-auto p-4 border-t border-primary/20">
-                  {session ? (
-                    <button
-                      className="flex items-center justify-center w-full p-2 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
-                      onClick={() => {
-                        setIsMenuOpen(false)
-                        handleLogout()
-                      }}
-                    >
-                      Logout
-                    </button>
-                  ) : (
-                    <Link 
-                      href="/login" 
-                      className="flex items-center justify-center w-full p-2 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                  )}
-                </div>
               </nav>
               <div className="p-4 border-t border-primary/20 font-mono text-xs">
                 <div className="text-muted-foreground">
-                  <span className="text-green-500">z0d1ak@ctf</span>:<span className="text-blue-500">~</span>$ exit
+                  <span className="text-green-500">z0d1ak@ctf</span>:
+                  <span className="text-blue-500">~</span>$ exit
                 </div>
               </div>
             </div>
@@ -176,5 +125,5 @@ export function SiteHeader() {
         </Sheet>
       </div>
     </header>
-  )
+  );
 }

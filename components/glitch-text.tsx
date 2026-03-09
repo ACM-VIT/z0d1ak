@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface GlitchTextProps {
-  text: string
-  className?: string
+  text: string;
+  className?: string;
 }
 
 export function GlitchText({ text, className }: GlitchTextProps) {
@@ -12,5 +12,5 @@ export function GlitchText({ text, className }: GlitchTextProps) {
     <span className={cn("glitch", className)} data-text={text}>
       {text}
     </span>
-  )
+  );
 }

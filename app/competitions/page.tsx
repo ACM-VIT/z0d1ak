@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { TerminalText } from "@/components/terminal-text";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { getLatestCompetitions } from "@/app/actions/getLatestTags";
+import { getLatestCompetitionsFromWriteups } from "@/lib/writeups";
 import { unstable_cache } from "next/cache";
 import FileStructure from "@/components/file-structure";
 
@@ -16,10 +16,10 @@ interface Competition {
 
 const getCachedCompetitions = unstable_cache(
   async () => {
-    return getLatestCompetitions(100);
+    return getLatestCompetitionsFromWriteups(100);
   },
   ["all-competitions"],
-  { revalidate: 3600 }
+  { revalidate: 3600 },
 );
 
 export default async function CompetitionsPage() {
@@ -30,7 +30,9 @@ export default async function CompetitionsPage() {
       <SiteHeader />
       <main className="flex-1 container mx-auto px-4 py-16">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-4 text-white">CTF Competitions</h1>
+          <h1 className="text-3xl font-bold mb-4 text-white">
+            CTF Competitions
+          </h1>
           <div className="inline-block rounded-lg bg-black border border-primary/30 px-3 py-1 text-sm mb-4">
             <TerminalText text="$ ls -R /competitions" typingSpeed={50} />
           </div>
@@ -38,8 +40,8 @@ export default async function CompetitionsPage() {
 
         <div className="bg-gray-900 border border-primary/30 rounded-lg p-6">
           <div className="mb-4 font-mono">
-            <span className="text-blue-400">root@z0d1ak</span>
-            :<span className="text-green-400">~</span>$ ls -R /competitions
+            <span className="text-blue-400">root@z0d1ak</span>:
+            <span className="text-green-400">~</span>$ ls -R /competitions
           </div>
           <FileStructure competitions={competitions} />
         </div>

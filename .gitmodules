@@ -1,0 +1,3 @@
+[submodule "z0d1ak-writeups"]
+	path = z0d1ak-writeups
+	url = git@github.com:ACM-VIT/z0d1ak-writeups.git

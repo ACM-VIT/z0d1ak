@@ -1,9 +1,7 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { categories } from "@/drizzle/schema";
+import { fetchCategoriesFromWriteups } from "@/lib/writeups";
 
 export async function fetchCategoriesAction() {
-  const categoriesList = await db.select().from(categories);
-  return categoriesList;
+  return fetchCategoriesFromWriteups();
 }

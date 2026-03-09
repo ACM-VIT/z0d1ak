@@ -29,14 +29,21 @@ function isReadmeLikePost(post: { title?: string; slug?: string }) {
 
 export default function FileStructure({ competitions }: FileStructureProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [competitionPosts, setCompetitionPosts] = useState<Record<string, any[]>>({});
+  const [competitionPosts, setCompetitionPosts] = useState<
+    Record<string, any[]>
+  >({});
 
-  const toggleCompetition = async (competitionId: string) => {
-    setExpanded((prev) => ({ ...prev, [competitionId]: !prev[competitionId] }));
-    if (!competitionPosts[competitionId]) {
-      const res = await fetch(`/api/posts?competitionId=${competitionId}`);
+  const toggleCompetition = async (competitionName: string) => {
+    setExpanded((prev) => ({
+      ...prev,
+      [competitionName]: !prev[competitionName],
+    }));
+    if (!competitionPosts[competitionName]) {
+      const res = await fetch(
+        `/api/posts?competitionName=${encodeURIComponent(competitionName)}`,
+      );
       const data = await res.json();
-      setCompetitionPosts((prev) => ({ ...prev, [competitionId]: data }));
+      setCompetitionPosts((prev) => ({ ...prev, [competitionName]: data }));
     }
   };
 
@@ -47,16 +54,19 @@ export default function FileStructure({ competitions }: FileStructureProps) {
         <span>competitions</span>
       </div>
       {competitions.map((competition) => (
-        <div key={competition.id} className="ml-4 border-l border-primary/30 pl-4">
+        <div
+          key={competition.id}
+          className="ml-4 border-l border-primary/30 pl-4"
+        >
           <div className="flex items-center gap-2 text-white mb-2">
-            {expanded[competition.id] ? (
+            {expanded[competition.name] ? (
               <ChevronDown
-                onClick={() => toggleCompetition(competition.id)}
+                onClick={() => toggleCompetition(competition.name)}
                 className="h-4 w-4 text-primary cursor-pointer"
               />
             ) : (
               <ChevronRight
-                onClick={() => toggleCompetition(competition.id)}
+                onClick={() => toggleCompetition(competition.name)}
                 className="h-4 w-4 text-primary cursor-pointer"
               />
             )}
@@ -71,7 +81,7 @@ export default function FileStructure({ competitions }: FileStructureProps) {
               ({competition.postCount} writeups)
             </span>
           </div>
-          {expanded[competition.id] && (
+          {expanded[competition.name] && (
             <div className="ml-4 border-l border-primary/30 pl-4">
               <Link
                 href={`/competitions/${encodeURIComponent(competition.name)}#readme`}
@@ -81,8 +91,8 @@ export default function FileStructure({ competitions }: FileStructureProps) {
                 <span>README.md</span>
               </Link>
 
-              {competitionPosts[competition.id] ? (
-                competitionPosts[competition.id]
+              {competitionPosts[competition.name] ? (
+                competitionPosts[competition.name]
                   .filter((post) => !isReadmeLikePost(post))
                   .map((post, index) => (
                     <Link

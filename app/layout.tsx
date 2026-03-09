@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/components/auth-provider";
 import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -32,13 +31,13 @@ export const metadata: Metadata = {
     ],
     locale: "en_US",
     type: "website",
-  // },
-  // twitter: {
-  //   card: "summary_large_image",
-  //   title: "z0d1ak",
-  //   description: "CTF Writeups and Hacking Adventures",
-  //   images: ["https://z0d1ak.com/twitter-image.png"],
-  //   creator: "@yourtwitterhandle",
+    // },
+    // twitter: {
+    //   card: "summary_large_image",
+    //   title: "z0d1ak",
+    //   description: "CTF Writeups and Hacking Adventures",
+    //   images: ["https://z0d1ak.com/twitter-image.png"],
+    //   creator: "@yourtwitterhandle",
   },
   robots: {
     index: true,
@@ -52,9 +51,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-black text-green-500`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          forcedTheme="dark"
+        >
           <ToastProvider>
-            <AuthProvider>{children}</AuthProvider>
+            {children}
             <ToastViewport />
           </ToastProvider>
         </ThemeProvider>

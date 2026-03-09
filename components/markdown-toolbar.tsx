@@ -1,7 +1,12 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+"use client";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Heading1,
   Heading2,
@@ -18,10 +23,10 @@ import {
   Terminal,
   Flag,
   FileCode2,
-} from "lucide-react"
+} from "lucide-react";
 
 interface MarkdownToolbarProps {
-  onInsert: (syntax: string, selectionOffset?: number) => void
+  onInsert: (syntax: string, selectionOffset?: number) => void;
 }
 
 export function MarkdownToolbar({ onInsert }: MarkdownToolbarProps) {
@@ -232,7 +237,12 @@ export function MarkdownToolbar({ onInsert }: MarkdownToolbarProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-              onClick={() => onInsert("| Header | Header |\n| ------ | ------ |\n| Cell | Cell |\n| Cell | Cell |", 2)}
+              onClick={() =>
+                onInsert(
+                  "| Header | Header |\n| ------ | ------ |\n| Cell | Cell |\n| Cell | Cell |",
+                  2,
+                )
+              }
             >
               <Table className="h-4 w-4" />
             </Button>
@@ -258,6 +268,5 @@ export function MarkdownToolbar({ onInsert }: MarkdownToolbarProps) {
         </Tooltip>
       </div>
     </TooltipProvider>
-  )
+  );
 }
-

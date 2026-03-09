@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button"
-import { SiteHeader } from "@/components/site-header"
-import { TerminalText } from "@/components/terminal-text"
-import { formatDate } from "@/lib/utils"
-import Link from "next/link"
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
+import { TerminalText } from "@/components/terminal-text";
+import { formatDate } from "@/lib/utils";
+import Link from "next/link";
 import {
   ChevronRight,
   Search,
@@ -17,57 +17,67 @@ import {
   Network,
   Zap,
   ChevronLeft,
-} from "lucide-react"
-import { Input } from "@/components/ui/input"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import remarkMath from "remark-math"
-import rehypeKatex from "rehype-katex"
-import { fetchAllPosts, type FetchPostsParams } from "@/app/actions/fetchAllPosts"
-import { fetchCategoriesAction } from "@/app/actions/fetchCategories"
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import {
+  fetchAllPosts,
+  type FetchPostsParams,
+} from "@/app/actions/fetchAllPosts";
+import { fetchCategoriesAction } from "@/app/actions/fetchCategories";
 
 type Category = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 interface PageProps {
-  params: Promise<{ [key: string]: string }>
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+  params: Promise<{ [key: string]: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-const getQueryParam = (param: string | string[] | undefined): string | undefined =>
-  Array.isArray(param) ? param[0] : param
+const getQueryParam = (
+  param: string | string[] | undefined,
+): string | undefined => (Array.isArray(param) ? param[0] : param);
 
 function getCategoryIcon(categoryName: string | null | undefined) {
-  if (!categoryName) return <FileText className="h-5 w-5" />
+  if (!categoryName) return <FileText className="h-5 w-5" />;
 
-  const name = categoryName.toLowerCase()
-  if (name.includes("web")) return <Code className="h-5 w-5" />
-  if (name.includes("crypto")) return <Lock className="h-5 w-5" />
-  if (name.includes("forensic")) return <Search className="h-5 w-5" />
-  if (name.includes("pwn") || name.includes("exploit")) return <Shield className="h-5 w-5" />
-  if (name.includes("reverse")) return <Cpu className="h-5 w-5" />
-  if (name.includes("network")) return <Network className="h-5 w-5" />
-  if (name.includes("database") || name.includes("sql")) return <Database className="h-5 w-5" />
-  return <FileText className="h-5 w-5" />
+  const name = categoryName.toLowerCase();
+  if (name.includes("web")) return <Code className="h-5 w-5" />;
+  if (name.includes("crypto")) return <Lock className="h-5 w-5" />;
+  if (name.includes("forensic")) return <Search className="h-5 w-5" />;
+  if (name.includes("pwn") || name.includes("exploit"))
+    return <Shield className="h-5 w-5" />;
+  if (name.includes("reverse")) return <Cpu className="h-5 w-5" />;
+  if (name.includes("network")) return <Network className="h-5 w-5" />;
+  if (name.includes("database") || name.includes("sql"))
+    return <Database className="h-5 w-5" />;
+  return <FileText className="h-5 w-5" />;
 }
 
 export default async function WriteUpsPage({ searchParams }: PageProps) {
-  const _ = await Promise.resolve()
-  const sp = await searchParams
+  const _ = await Promise.resolve();
+  const sp = await searchParams;
 
   const paramsObj: FetchPostsParams = {
-    page: getQueryParam(sp.page) ? Number.parseInt(getQueryParam(sp.page)!, 10) : 1,
-    limit: getQueryParam(sp.limit) ? Number.parseInt(getQueryParam(sp.limit)!, 10) : 10,
+    page: getQueryParam(sp.page)
+      ? Number.parseInt(getQueryParam(sp.page)!, 10)
+      : 1,
+    limit: getQueryParam(sp.limit)
+      ? Number.parseInt(getQueryParam(sp.limit)!, 10)
+      : 10,
     categoryId: getQueryParam(sp.categoryId),
     search: getQueryParam(sp.search),
-  }
+  };
 
-  const { posts, totalCount, page, limit } = await fetchAllPosts(paramsObj)
-  const categoriesList: Category[] = await fetchCategoriesAction()
+  const { posts, totalCount, page, limit } = await fetchAllPosts(paramsObj);
+  const categoriesList: Category[] = await fetchCategoriesAction();
 
-  const totalPages = Math.ceil(totalCount / limit)
+  const totalPages = Math.ceil(totalCount / limit);
 
   return (
     <div className="flex min-h-screen flex-col bg-black text-white">
@@ -79,7 +89,10 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-8">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-primary/10 border border-primary/30 px-3 py-1 text-sm">
-                  <TerminalText text="$ find /writeups -type f | sort" typingSpeed={50} />
+                  <TerminalText
+                    text="$ find /writeups -type f | sort"
+                    typingSpeed={50}
+                  />
                 </div>
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   CTF <span className="text-primary">Writeups</span>
@@ -104,7 +117,10 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10">
+                    <Button
+                      variant="outline"
+                      className="gap-2 border-primary/30 hover:bg-primary/10"
+                    >
                       <Filter className="h-4 w-4" />
                       Filter
                     </Button>
@@ -126,7 +142,11 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
 
             <div className="space-y-8 md:space-y-12">
               {posts.map((post: any, index: number) => (
-                <Link key={post.id} href={`/writeups/${post.slug}`} className="block group">
+                <Link
+                  key={post.id}
+                  href={`/writeups/${post.slug}`}
+                  className="block group"
+                >
                   <div className="relative">
                     <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -142,10 +162,14 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <div className="inline-block rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
                               {post.categoryName ||
-                                categoriesList.find((c: Category) => c.id === post.categoryId)?.name ||
+                                categoriesList.find(
+                                  (c: Category) => c.id === post.categoryId,
+                                )?.name ||
                                 "Uncategorized"}
                             </div>
-                            <div className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {formatDate(post.createdAt)}
+                            </div>
                           </div>
 
                           <h2 className="text-xl md:text-2xl font-bold mb-2 text-white group-hover:text-primary transition-colors duration-300">
@@ -173,7 +197,9 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                                 <UserIcon className="h-4 w-4 text-primary" />
                               </div>
-                              <div className="text-sm font-medium">{post.author?.name || "Anonymous"}</div>
+                              <div className="text-sm font-medium">
+                                {post.author?.name || "Anonymous"}
+                              </div>
                             </div>
 
                             <div className="flex items-center text-primary text-sm font-mono">
@@ -188,10 +214,17 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
 
                       <div className="border-t border-primary/20 px-4 py-2 bg-black/90 flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Difficulty:</span>
+                          <span className="text-xs text-muted-foreground">
+                            Difficulty:
+                          </span>
                           <div className="flex gap-1">
-                            {Array.from({ length: Math.floor(Math.random() * 5) + 1 }).map((_, i) => (
-                              <div key={i} className="w-4 h-1 bg-primary rounded-full"></div>
+                            {Array.from({
+                              length: Math.floor(Math.random() * 5) + 1,
+                            }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="w-4 h-1 bg-primary rounded-full"
+                              ></div>
                             ))}
                           </div>
                         </div>
@@ -214,7 +247,10 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                     className="border-primary/30 hover:bg-primary/10"
                     asChild
                   >
-                    <Link href={`?page=${page - 1}&limit=${limit}`} scroll={false}>
+                    <Link
+                      href={`?page=${page - 1}&limit=${limit}`}
+                      scroll={false}
+                    >
                       <ChevronLeft className="h-4 w-4 mr-1" />
                       Previous
                     </Link>
@@ -222,7 +258,7 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
 
                   <div className="flex items-center gap-1">
                     {Array.from({ length: totalPages }).map((_, idx) => {
-                      const pageNum = idx + 1
+                      const pageNum = idx + 1;
                       return (
                         <Button
                           key={pageNum}
@@ -235,11 +271,14 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                           }
                           asChild
                         >
-                          <Link href={`?page=${pageNum}&limit=${limit}`} scroll={false}>
+                          <Link
+                            href={`?page=${pageNum}&limit=${limit}`}
+                            scroll={false}
+                          >
                             {pageNum}
                           </Link>
                         </Button>
-                      )
+                      );
                     })}
                   </div>
 
@@ -250,7 +289,10 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                     className="border-primary/30 hover:bg-primary/10"
                     asChild
                   >
-                    <Link href={`?page=${page + 1}&limit=${limit}`} scroll={false}>
+                    <Link
+                      href={`?page=${page + 1}&limit=${limit}`}
+                      scroll={false}
+                    >
                       Next
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Link>
@@ -262,5 +304,5 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
         </section>
       </main>
     </div>
-  )
+  );
 }
