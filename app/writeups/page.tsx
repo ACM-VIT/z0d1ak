@@ -97,7 +97,7 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                   CTF <span className="text-primary">Writeups</span>
                 </h1>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="max-w-225 text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Detailed solutions and approaches to various CTF challenges
                 </p>
               </div>
@@ -148,7 +148,7 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                   className="block group"
                 >
                   <div className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute -inset-1 bg-linear-to-r from-primary/20 via-primary/10 to-primary/5 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                     <div className="relative bg-black border border-primary/30 rounded-xl overflow-hidden">
                       <div className="flex flex-col md:flex-row">
@@ -181,11 +181,21 @@ export default async function WriteUpsPage({ searchParams }: PageProps) {
                               remarkPlugins={[remarkGfm, remarkMath]}
                               rehypePlugins={[rehypeKatex]}
                               components={{
-                                h1: ({ node, ...props }) => <div {...props} />,
-                                h2: ({ node, ...props }) => <div {...props} />,
-                                h3: ({ node, ...props }) => <div {...props} />,
-                                h4: ({ node, ...props }) => <div {...props} />,
-                                p: ({ node, ...props }) => <p {...props} />,
+                                h1: ({ node, ref: _ref, ...props }) => (
+                                  <div {...props} />
+                                ),
+                                h2: ({ node, ref: _ref, ...props }) => (
+                                  <div {...props} />
+                                ),
+                                h3: ({ node, ref: _ref, ...props }) => (
+                                  <div {...props} />
+                                ),
+                                h4: ({ node, ref: _ref, ...props }) => (
+                                  <div {...props} />
+                                ),
+                                p: ({ node, ref: _ref, ...props }) => (
+                                  <p {...props} />
+                                ),
                               }}
                             >
                               {post.excerpt}

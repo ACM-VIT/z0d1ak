@@ -108,7 +108,7 @@ export function DesktopHero() {
             <GlitchText text="z0d1ak" className="text-primary" />
             <span className="block mt-2 text-white">Our Blog</span>
           </h1>
-          <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+          <p className="max-w-150 text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
             <TerminalText
               text="Hacking challenges and breaking security."
               typingSpeed={20}
@@ -123,7 +123,7 @@ export function DesktopHero() {
       <div className="mx-auto lg:ml-auto w-full h-full flex items-center">
         <TerminalShell
           title="z0d1ak@ctf:~"
-          className="h-[calc(100vh-10rem)] max-h-[600px]"
+          className="h-[calc(100vh-10rem)] max-h-150"
           fullWidth
           maxHeight="600px"
         >

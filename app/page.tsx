@@ -103,7 +103,7 @@ export default async function Home() {
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl text-white">
                   Active Competitions
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="max-w-225 text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   CTF events we're currently participating in
                 </p>
               </div>
@@ -123,7 +123,7 @@ export default async function Home() {
                       className="border-b border-primary/20 pb-4 last:border-0"
                     >
                       <div className="flex items-start gap-2 md:gap-4">
-                        <div className="flex-shrink-0 w-6 md:w-8 text-center">
+                        <div className="shrink-0 w-6 md:w-8 text-center">
                           <span className="text-primary font-bold">
                             {index + 1}.
                           </span>
@@ -216,7 +216,7 @@ export default async function Home() {
                 <h2 className="text-2xl md:text-3xl font-bold tracking-tighter sm:text-4xl text-white">
                   Latest Writeups
                 </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="max-w-225 text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Check out the most recent CTF challenge solutions
                 </p>
               </div>
@@ -242,7 +242,7 @@ export default async function Home() {
                           <div className="bg-gray-800 px-3 md:px-4 py-2 flex flex-wrap md:flex-nowrap items-center justify-between gap-2 border-b border-primary/20">
                             <div className="flex items-center gap-2">
                               <FileText className="h-4 w-4 text-primary" />
-                              <span className="font-mono text-xs md:text-sm text-white truncate max-w-[150px] md:max-w-none">
+                              <span className="font-mono text-xs md:text-sm text-white truncate max-w-37.5 md:max-w-none">
                                 {post.slug}.md
                               </span>
                             </div>
@@ -267,19 +267,21 @@ export default async function Home() {
                             <div className="bg-black/50 p-2 md:p-3 rounded border border-primary/20 mb-3 text-xs md:text-sm text-muted-foreground">
                               <ReactMarkdown
                                 components={{
-                                  h1: ({ node, ...props }) => (
-                                    <div {...props} />
+                                  h1: ({ node, children, ...props }) => (
+                                    <>{children}</>
                                   ),
-                                  h2: ({ node, ...props }) => (
-                                    <div {...props} />
+                                  h2: ({ node, children, ...props }) => (
+                                    <>{children}</>
                                   ),
-                                  h3: ({ node, ...props }) => (
-                                    <div {...props} />
+                                  h3: ({ node, children, ...props }) => (
+                                    <>{children}</>
                                   ),
-                                  h4: ({ node, ...props }) => (
-                                    <div {...props} />
+                                  h4: ({ node, children, ...props }) => (
+                                    <>{children}</>
                                   ),
-                                  p: ({ node, ...props }) => <p {...props} />,
+                                  p: ({ node, children, ...props }) => (
+                                    <>{children}</>
+                                  ),
                                 }}
                               >
                                 {post.excerpt}
