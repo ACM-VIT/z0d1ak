@@ -1,9 +1,7 @@
-import type React from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { TerminalText } from "@/components/terminal-text";
-import { GlitchText } from "@/components/glitch-text";
-import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import {
   Terminal,
@@ -14,16 +12,14 @@ import {
   Tag,
   Clock,
   Flag,
-  Shield,
-  Code,
-  Zap,
-  Search,
 } from "lucide-react";
 import { getLatestPosts } from "@/app/actions/getLatestPosts";
 import { fetchCategoriesAction } from "@/app/actions/fetchCategories";
 import { getLatestCompetitionsFromWriteups } from "@/lib/writeups";
 import ReactMarkdown from "react-markdown";
 import { unstable_cache } from "next/cache";
+import { MobileHero, DesktopHero } from "@/components/home-hero";
+import { TerminalPrompt, TerminalShell } from "@/components/terminal-shell";
 
 export interface Post {
   id: string;
@@ -72,273 +68,6 @@ const getCachedCompetitions = unstable_cache(
   { revalidate: 3600 },
 );
 
-function TerminalPrompt({
-  text,
-  className = "",
-}: {
-  text: string;
-  className?: string;
-}) {
-  return (
-    <div className={`font-mono text-sm md:text-base ${className}`}>
-      <span className="text-green-500">z0d1ak@ctf</span>
-      <span className="text-muted-foreground">:</span>
-      <span className="text-blue-500">~</span>
-      <span className="text-muted-foreground">$</span>{" "}
-      <span className="text-primary">{text}</span>
-    </div>
-  );
-}
-
-function TerminalWindow({
-  title,
-  children,
-  className = "",
-  fullWidth = false,
-  maxHeight = "",
-}: {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-  fullWidth?: boolean;
-  maxHeight?: string;
-}) {
-  return (
-    <div
-      className={`bg-black border border-primary/30 rounded-lg overflow-hidden ${
-        fullWidth ? "w-full" : "max-w-4xl mx-auto"
-      } ${className}`}
-      style={{ maxHeight: maxHeight ? maxHeight : "none" }}
-    >
-      <div className="flex items-center gap-2 bg-gray-900 px-4 py-2 border-b border-primary/20">
-        <div className="h-3 w-3 rounded-full bg-destructive"></div>
-        <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-        <div className="h-3 w-3 rounded-full bg-green-500"></div>
-        <div className="ml-2 text-xs text-muted-foreground font-mono">
-          {title}
-        </div>
-      </div>
-      <div
-        className={`p-4 md:p-6 font-mono ${maxHeight ? "overflow-auto" : ""}`}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function AsciiArt() {
-  return (
-    <pre className="text-primary text-xs md:text-sm font-mono leading-tight overflow-x-auto">
-      {`
- ███████╗ ██████╗ ██████╗  ██╗ █████╗ ██╗  ██╗
- ╚══███╔╝██╔═████╗██╔══██╗███║██╔══██╗██║ ██╔╝
-   ███╔╝ ██║██╔██║██║  ██║╚██║███████║█████╔╝
-  ███╔╝  ████╔╝██║██║  ██║ ██║██╔══██║██╔═██╗
- ███████╗╚██████╔╝██████╔╝ ██║██║  ██║██║  ██╗
- ╚══════╝ ╚═════╝ ╚═════╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-
-      `}
-    </pre>
-  );
-}
-
-// Mobile Hero - simplified with just ASCII art and no redundant team name
-function MobileHero() {
-  return (
-    <div className="space-y-6 text-center px-4">
-      <div className="inline-block rounded-lg bg-black border border-primary/30 px-3 py-1 text-sm mb-4 mx-auto">
-        <TerminalText text="$ ./welcome.sh" typingSpeed={80} />
-      </div>
-
-      <AsciiArt />
-
-      <p className="text-muted-foreground">
-        <TerminalText
-          text="Hacking challenges, solving puzzles, breaking security."
-          typingSpeed={20}
-          startDelay={1000}
-        />
-      </p>
-
-      <TerminalWindow title="z0d1ak@ctf:~" className="mx-auto" fullWidth>
-        <div className="space-y-3">
-          <TerminalPrompt text="whoami" />
-          <p className="text-white">z0d1ak - CTF Team</p>
-
-          <TerminalPrompt text="ls -la /skills" />
-          <div className="grid grid-cols-2 gap-2 my-2">
-            <div className="flex items-center gap-2">
-              <Code className="h-4 w-4 text-blue-400" />
-              <span className="text-blue-400">web</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-green-400" />
-              <span className="text-green-400">crypto</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-yellow-400" />
-              <span className="text-yellow-400">forensics</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-red-400" />
-              <span className="text-red-400">pwn</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-purple-400" />
-              <span className="text-purple-400">reverse</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-orange-400" />
-              <span className="text-orange-400">OSINT</span>
-            </div>
-          </div>
-
-          <TerminalPrompt text="./join_team.sh" />
-          <p className="text-primary animate-pulse">
-            Initializing recruitment process...
-          </p>
-        </div>
-      </TerminalWindow>
-
-      <div className="flex flex-col gap-3 pt-4">
-        <Link href="/writeups">
-          <Button variant="hacker" size="lg" className="gap-2 w-full">
-            <FileText className="h-4 w-4" />
-            Browse Writeups
-          </Button>
-        </Link>
-        <Link href="/login">
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2 w-full border-primary/50 text-primary hover:bg-primary/10"
-          >
-            <Terminal className="h-4 w-4" />
-            Join the Team
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function DesktopHero() {
-  return (
-    <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center min-h-[calc(100vh-4rem)]">
-      <div className="space-y-6">
-        <div className="inline-block rounded-lg bg-black border border-primary/30 px-3 py-1 text-sm mb-4">
-          <TerminalText text="$ ./welcome.sh" typingSpeed={80} />
-        </div>
-
-        <div className="space-y-4">
-          <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-            <GlitchText text="z0d1ak" className="text-primary" />
-            <span className="block mt-2 text-white">Our Blog</span>
-          </h1>
-          <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-            <TerminalText
-              text="Hacking challenges and breaking security."
-              typingSpeed={20}
-              startDelay={1000}
-            />
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
-          <Link href="/writeups">
-            <Button
-              variant="hacker"
-              size="lg"
-              className="gap-2 w-full sm:w-auto"
-            >
-              <FileText className="h-4 w-4" />
-              Browse Writeups
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button
-              variant="outline"
-              size="lg"
-              className="gap-2 w-full sm:w-auto border-primary/50 text-primary hover:bg-primary/10"
-            >
-              <Terminal className="h-4 w-4" />
-              Join the Team
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <div className="mx-auto lg:ml-auto w-full h-full flex items-center">
-        <TerminalWindow
-          title="z0d1ak@ctf:~"
-          className="h-[calc(100vh-10rem)] max-h-[600px]"
-          fullWidth
-          maxHeight="600px"
-        >
-          <div className="space-y-4">
-            <AsciiArt />
-
-            <TerminalPrompt text="whoami" />
-            <p className="text-white">z0d1ak - Cybersecurity CTF Team</p>
-
-            <TerminalPrompt text="ls -la /skills" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 my-2">
-              <div className="flex items-center gap-2">
-                <Code className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400">web</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-green-400" />
-                <span className="text-green-400">crypto</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-yellow-400" />
-                <span className="text-yellow-400">forensics</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Terminal className="h-4 w-4 text-red-400" />
-                <span className="text-red-400">pwn</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-purple-400" />
-                <span className="text-purple-400">reverse</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Search className="h-4 w-4 text-orange-400" />
-                <span className="text-orange-400">OSINT</span>
-              </div>
-            </div>
-
-            <TerminalPrompt text="cat /etc/motd" />
-            <div className="bg-primary/5 border-l-4 border-primary p-2 my-2">
-              <p className="text-white">Welcome to the z0d1ak CTF team blog</p>
-              <p className="text-white">
-                We hack, we learn, we share knowledge.
-              </p>
-            </div>
-
-            <TerminalPrompt text="cat /etc/banner" />
-            <div className="bg-black/50 p-3 rounded border border-primary/20 my-2">
-              <p className="text-white">
-                🔐 Specializing in web, crypto, and forensics
-              </p>
-              <p className="text-white">
-                🌐 Join our community of CTF enthusiasts
-              </p>
-            </div>
-
-            <TerminalPrompt text="./join_team.sh" />
-            <p className="text-primary animate-pulse">
-              Initializing recruitment process...
-            </p>
-          </div>
-        </TerminalWindow>
-      </div>
-    </div>
-  );
-}
-
 export default async function Home() {
   const latestPosts: Post[] = await getCachedLatestPosts(3);
   const categoriesList: Category[] = await getCachedCategories();
@@ -380,7 +109,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <TerminalWindow title="competitions.log" className="mb-8">
+            <TerminalShell title="competitions.log" className="mb-8">
               <div className="space-y-1">
                 <TerminalPrompt text="cat /var/log/competitions.log | sort -r | head -n 5" />
                 <p className="text-xs text-muted-foreground mb-4">
@@ -469,7 +198,7 @@ export default async function Home() {
                   </Link>
                 </div>
               </div>
-            </TerminalWindow>
+            </TerminalShell>
           </div>
         </section>
 
@@ -493,7 +222,7 @@ export default async function Home() {
               </div>
             </div>
 
-            <TerminalWindow title="writeups.sh" className="mb-8">
+            <TerminalShell title="writeups.sh" className="mb-8">
               <div className="space-y-1">
                 <TerminalPrompt text="./fetch_writeups.sh --latest=3 --format=detailed" />
                 <p className="text-xs text-muted-foreground mb-4">
@@ -632,13 +361,13 @@ export default async function Home() {
                   </Link>
                 </div>
               </div>
-            </TerminalWindow>
+            </TerminalShell>
           </div>
         </section>
 
         <section className="py-8 md:py-12">
           <div className="container px-4 md:px-6">
-            <TerminalWindow title="contact.sh" className="max-w-2xl mx-auto">
+            <TerminalShell title="contact.sh" className="max-w-2xl mx-auto">
               <div className="space-y-3">
                 <TerminalPrompt text="./contact.sh --help" />
                 <div className="text-sm text-muted-foreground">
@@ -671,7 +400,7 @@ export default async function Home() {
                   Session terminated. Come back soon!
                 </p>
               </div>
-            </TerminalWindow>
+            </TerminalShell>
           </div>
         </section>
       </main>
