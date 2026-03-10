@@ -636,7 +636,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* <section className="py-8 md:py-12">
+        <section className="py-8 md:py-12">
           <div className="container px-4 md:px-6">
             <TerminalWindow title="contact.sh" className="max-w-2xl mx-auto">
               <div className="space-y-3">
@@ -648,30 +648,32 @@ export default async function Home() {
 
                 <TerminalPrompt text="cat /etc/contact_info" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <Link href="/about" className="flex items-center gap-2 text-primary hover:underline">
+                  <Link
+                    href="/about"
+                    className="flex items-center gap-2 text-primary hover:underline"
+                  >
                     <Terminal className="h-4 w-4" />
                     <span>About Team</span>
                   </Link>
-                  <Link href="/discord" className="flex items-center gap-2 text-primary hover:underline">
+                  <Link
+                    href="https://ctftime.org/team/373452"
+                    className="flex items-center gap-2 text-primary hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <Terminal className="h-4 w-4" />
-                    <span>Join Discord</span>
-                  </Link>
-                  <Link href="/twitter" className="flex items-center gap-2 text-primary hover:underline">
-                    <Terminal className="h-4 w-4" />
-                    <span>Twitter</span>
-                  </Link>
-                  <Link href="/github" className="flex items-center gap-2 text-primary hover:underline">
-                    <Terminal className="h-4 w-4" />
-                    <span>GitHub</span>
+                    <span>CTFtime</span>
                   </Link>
                 </div>
 
                 <TerminalPrompt text="exit" />
-                <p className="text-xs text-muted-foreground">Session terminated. Come back soon!</p>
+                <p className="text-xs text-muted-foreground">
+                  Session terminated. Come back soon!
+                </p>
               </div>
             </TerminalWindow>
           </div>
-        </section> */}
+        </section>
       </main>
     </div>
   );

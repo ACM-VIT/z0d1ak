@@ -54,6 +54,14 @@ export interface WriteupCategory {
   name: string;
 }
 
+export interface WriteupMember {
+  id: string;
+  name: string;
+  slug: string;
+  writeupCount: number;
+  writeups: WriteupSummary[];
+}
+
 export interface FetchWriteupsParams {
   page?: number;
   limit?: number;
@@ -90,6 +98,28 @@ function makeStableId(...parts: string[]): string {
 
 function normalizeText(value: string): string {
   return value.replace(/\r\n/g, "\n").trim();
+}
+
+function extractAuthorName(markdown: string): string | null {
+  const normalized = markdown.replace(/\r\n/g, "\n");
+  const lines = normalized.split("\n");
+
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (lines[index].trim() !== "## Author") continue;
+
+    for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
+      const candidate = lines[nextIndex].trim();
+
+      if (!candidate) continue;
+      if (candidate.startsWith("#")) break;
+
+      return candidate;
+    }
+
+    break;
+  }
+
+  return null;
 }
 
 function toPosixPath(value: string): string {
@@ -297,7 +327,9 @@ async function loadWriteupsForCompetition(
         competitionSlug: slugify(competitionName),
         categoryId: makeStableId("category", categoryName),
         categoryName,
-        author: { ...DEFAULT_AUTHOR },
+        author: {
+          name: extractAuthorName(normalizedContent) ?? DEFAULT_AUTHOR.name,
+        },
         tags: buildWriteupTags({
           createdAt,
           competitionName,
@@ -572,9 +604,104 @@ export async function getCompetitionPageDataFromWriteups(
 }
 
 export async function getUserPostsFromWriteups(
-  _userId: string,
+  userId: string,
 ): Promise<WriteupSummary[]> {
-  return [];
+  const normalizedUserId = decodeURIComponent(userId).trim().toLowerCase();
+  if (!normalizedUserId) return [];
+
+  const allWriteups = await loadAllWriteups();
+
+  return allWriteups.filter(
+    (writeup) => writeup.author?.name.trim().toLowerCase() === normalizedUserId,
+  );
+}
+
+export async function getMembersFromWriteups(): Promise<WriteupMember[]> {
+  const allWriteups = await loadAllWriteups();
+  const memberMap = new Map<string, WriteupMember>();
+
+  for (const writeup of allWriteups) {
+    const memberName = writeup.author?.name?.trim() || DEFAULT_AUTHOR.name;
+    const memberId = makeStableId("member", memberName);
+    const existing = memberMap.get(memberId);
+
+    if (existing) {
+      existing.writeups.push(writeup);
+      existing.writeupCount = existing.writeups.length;
+      continue;
+    }
+
+    memberMap.set(memberId, {
+      id: memberId,
+      name: memberName,
+      slug: slugify(memberName),
+      writeupCount: 1,
+      writeups: [writeup],
+    });
+  }
+
+  return [...memberMap.values()]
+    .map((member) => ({
+      ...member,
+      writeups: [...member.writeups].sort(compareWriteupsByDateDesc),
+      writeupCount: member.writeups.length,
+    }))
+    .sort((a, b) => {
+      if (b.writeupCount !== a.writeupCount) {
+        return b.writeupCount - a.writeupCount;
+      }
+
+      return a.name.localeCompare(b.name);
+    });
+}
+
+export async function getMemberPageDataFromWriteups(
+  memberNameParam: string,
+): Promise<{
+  member: Pick<WriteupMember, "id" | "name" | "slug" | "writeupCount">;
+  writeups: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    content: string;
+    createdAt: string;
+    categoryName: string | null;
+    competitionName: string;
+    authorName: string | null;
+  }>;
+} | null> {
+  const memberName = decodeURIComponent(memberNameParam).trim();
+  if (!memberName) return null;
+
+  const members = await getMembersFromWriteups();
+  const member = members.find(
+    (entry) =>
+      entry.name.toLowerCase() === memberName.toLowerCase() ||
+      entry.slug === slugify(memberName),
+  );
+
+  if (!member) return null;
+
+  return {
+    member: {
+      id: member.id,
+      name: member.name,
+      slug: member.slug,
+      writeupCount: member.writeupCount,
+    },
+    writeups: member.writeups.map((writeup) => ({
+      id: writeup.id,
+      title: writeup.title,
+      slug: writeup.slug,
+      excerpt: writeup.excerpt,
+      content: writeup.content,
+      createdAt: writeup.createdAt,
+      categoryName: writeup.categoryName,
+      competitionName: writeup.competitionName,
+      authorName: writeup.author?.name ?? null,
+    })),
+  };
 }
 
 export async function getLatestCompetitionsFromWriteups(limit = 100): Promise<

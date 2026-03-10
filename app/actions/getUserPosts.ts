@@ -1,5 +1,7 @@
 "use server";
 
-export async function getUserPosts(_userId: string) {
-  return [];
+import { getUserPostsFromWriteups } from "@/lib/writeups";
+
+export async function getUserPosts(userId: string) {
+  return getUserPostsFromWriteups(userId);
 }
