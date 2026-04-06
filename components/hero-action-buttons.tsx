@@ -31,11 +31,7 @@ export function HeroActionButtons({
         rel="noopener noreferrer"
         className={widthClassName}
       >
-        <Button
-          variant="outline"
-          size="lg"
-          className={`${widthClassName} border-primary/50 text-primary hover:bg-primary/10`}
-        >
+        <Button variant="hacker" size="lg" className={widthClassName}>
           <Terminal className="h-4 w-4" />
           Apply
         </Button>
