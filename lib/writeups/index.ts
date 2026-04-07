@@ -1,7 +1,6 @@
-import { promises as fs } from "fs";
-import path from "path";
+import bundleData from "./generated/writeups-bundle.json";
 
-export const WRITEUPS_ROOT = path.join(process.cwd(), "z0d1ak-writeups");
+export const WRITEUPS_ROOT = "z0d1ak-writeups";
 
 export type WriteupTagKind = "date" | "ctf" | "category";
 
@@ -69,14 +68,44 @@ export interface FetchWriteupsParams {
   search?: string;
 }
 
-const README_FILE = "README.md";
-const IGNORED_DIRECTORY_NAMES = new Set([
-  ".git",
-  ".github",
-  ".hooks",
-  "node_modules",
-]);
+interface WriteupsBundle {
+  generatedAt: string;
+  source: {
+    owner: string;
+    repo: string;
+    ref: string;
+    rawBase: string;
+    rootPrefix: string;
+  };
+  competitions: WriteupCompetition[];
+  writeups: WriteupSummary[];
+}
+
 const DEFAULT_AUTHOR = { name: "Team z0d1ak" } as const;
+
+function ensureBundleShape(bundle: unknown): asserts bundle is WriteupsBundle {
+  if (!bundle || typeof bundle !== "object") {
+    throw new Error("Invalid writeups bundle: expected an object");
+  }
+
+  const maybeBundle = bundle as Partial<WriteupsBundle>;
+  if (!Array.isArray(maybeBundle.competitions)) {
+    throw new Error("Invalid writeups bundle: competitions must be an array");
+  }
+
+  if (!Array.isArray(maybeBundle.writeups)) {
+    throw new Error("Invalid writeups bundle: writeups must be an array");
+  }
+
+  if (!maybeBundle.source?.rawBase || !maybeBundle.source?.rootPrefix) {
+    throw new Error("Invalid writeups bundle: missing source metadata");
+  }
+}
+
+const bundle = (() => {
+  ensureBundleShape(bundleData);
+  return bundleData as WriteupsBundle;
+})();
 
 function slugify(value: string): string {
   return value
@@ -96,95 +125,10 @@ function makeStableId(...parts: string[]): string {
     .join("__");
 }
 
-function normalizeText(value: string): string {
-  return value.replace(/\r\n/g, "\n").trim();
-}
-
-function extractAuthorName(markdown: string): string | null {
-  const normalized = markdown.replace(/\r\n/g, "\n");
-  const lines = normalized.split("\n");
-
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
-    if (lines[index].trim() !== "## Author") continue;
-
-    for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
-      const candidate = lines[nextIndex].trim();
-
-      if (!candidate) continue;
-      if (candidate.startsWith("#")) break;
-
-      return candidate;
-    }
-
-    break;
-  }
-
-  return null;
-}
-
-function toPosixPath(value: string): string {
-  return value.split(path.sep).join("/");
-}
-
 function uniqueStrings(values: Array<string | null | undefined>): string[] {
   return [
     ...new Set(values.map((value) => (value ?? "").trim()).filter(Boolean)),
   ];
-}
-
-function isDirectoryEntryNameIgnored(name: string): boolean {
-  return IGNORED_DIRECTORY_NAMES.has(name);
-}
-
-async function pathExists(targetPath: string): Promise<boolean> {
-  try {
-    await fs.access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function readTextFileIfExists(
-  targetPath: string,
-): Promise<string | null> {
-  try {
-    return await fs.readFile(targetPath, "utf8");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return null;
-    }
-    throw error;
-  }
-}
-
-async function listDirectories(targetPath: string): Promise<string[]> {
-  const entries = await fs.readdir(targetPath, { withFileTypes: true });
-  return entries
-    .filter(
-      (entry) =>
-        entry.isDirectory() && !isDirectoryEntryNameIgnored(entry.name),
-    )
-    .map((entry) => entry.name)
-    .sort((a, b) => a.localeCompare(b));
-}
-
-async function listFiles(targetPath: string): Promise<string[]> {
-  const entries = await fs.readdir(targetPath, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .sort((a, b) => a.localeCompare(b));
-}
-
-function extractDateFromCompetitionName(name: string): string | null {
-  const isoMatch = name.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
-  if (isoMatch) return isoMatch[1];
-
-  const yearMatch = name.match(/\b(20\d{2})\b/);
-  if (yearMatch) return `${yearMatch[1]}-01-01`;
-
-  return null;
 }
 
 function extractExcerpt(markdown: string, maxLength = 220): string {
@@ -203,20 +147,57 @@ function extractExcerpt(markdown: string, maxLength = 220): string {
   return `${cleaned.slice(0, maxLength).trimEnd()}…`;
 }
 
-function buildWriteupTags(params: {
-  createdAt: string;
-  competitionName: string;
-  categoryName: string;
-}): string[] {
-  return uniqueStrings([
-    params.createdAt,
-    params.competitionName,
-    params.categoryName,
-  ]);
+function getRelativeSourcePath(value: string): string {
+  return value.split("\\").join("/");
 }
 
-function getRelativeSourcePath(fullPath: string): string {
-  return toPosixPath(path.relative(process.cwd(), fullPath));
+function stripRootPrefix(repoRelativePath: string): string {
+  const rootPrefix = `${bundle.source.rootPrefix}/`;
+  return repoRelativePath.startsWith(rootPrefix)
+    ? repoRelativePath.slice(rootPrefix.length)
+    : repoRelativePath;
+}
+
+function isExternalOrAnchorUrl(value: string): boolean {
+  return /^(?:[a-z][a-z\d+.-]*:|\/\/|#|\/)/i.test(value);
+}
+
+function normalizePosixPath(pathValue: string): string {
+  const input = pathValue.split("?")[0].split("#")[0];
+  const parts = input.split("/");
+  const stack: string[] = [];
+
+  for (const part of parts) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      stack.pop();
+      continue;
+    }
+    stack.push(part);
+  }
+
+  return stack.join("/");
+}
+
+export function resolveWriteupAssetUrl(
+  readmePath: string,
+  value: string,
+  kind: "raw" | "blob" = "raw",
+): string {
+  if (!value || isExternalOrAnchorUrl(value)) {
+    return value;
+  }
+
+  const rootPrefix = stripRootPrefix(readmePath);
+  const baseDirectory = rootPrefix.split("/").slice(0, -1).join("/");
+  const resolved = normalizePosixPath(`${baseDirectory}/${value}`);
+
+  const base =
+    kind === "raw"
+      ? bundle.source.rawBase
+      : `https://github.com/${bundle.source.owner}/${bundle.source.repo}/blob/${bundle.source.ref}`;
+
+  return `${base}/${resolved}`;
 }
 
 function compareWriteupsByDateDesc(
@@ -237,137 +218,40 @@ function compareCompetitionsByDateDesc(
   return a.name.localeCompare(b.name);
 }
 
-async function ensureWriteupsRoot(): Promise<void> {
-  const exists = await pathExists(WRITEUPS_ROOT);
-  if (!exists) {
-    throw new Error(`Writeups repository not found at ${WRITEUPS_ROOT}`);
-  }
-}
-
 async function loadCompetition(
   competitionName: string,
 ): Promise<WriteupCompetition | null> {
-  await ensureWriteupsRoot();
-
-  const competitionPath = path.join(WRITEUPS_ROOT, competitionName);
-  const exists = await pathExists(competitionPath);
-  if (!exists) return null;
-
-  const readmePath = path.join(competitionPath, README_FILE);
-  const readmeContent = await readTextFileIfExists(readmePath);
-  const categoryNames = await listDirectories(competitionPath);
-
-  let writeupCount = 0;
-  for (const categoryName of categoryNames) {
-    const categoryPath = path.join(competitionPath, categoryName);
-    const challengeNames = await listDirectories(categoryPath);
-    writeupCount += challengeNames.length;
-  }
-
-  const date = extractDateFromCompetitionName(competitionName);
-
-  return {
-    id: makeStableId("competition", competitionName),
-    name: competitionName,
-    slug: slugify(competitionName),
-    path: getRelativeSourcePath(competitionPath),
-    readmePath: readmeContent ? getRelativeSourcePath(readmePath) : null,
-    readmeContent: readmeContent ? normalizeText(readmeContent) : null,
-    date,
-    tags: uniqueStrings([date, competitionName]),
-    categories: categoryNames,
-    writeupCount,
-  };
+  return (
+    bundle.competitions.find(
+      (competition) => competition.name === competitionName,
+    ) ?? null
+  );
 }
 
 async function loadAllCompetitionNames(): Promise<string[]> {
-  await ensureWriteupsRoot();
-  return listDirectories(WRITEUPS_ROOT);
+  return bundle.competitions.map((competition) => competition.name);
 }
 
 async function loadWriteupsForCompetition(
   competitionName: string,
 ): Promise<WriteupSummary[]> {
-  const competitionPath = path.join(WRITEUPS_ROOT, competitionName);
-  const categoryNames = await listDirectories(competitionPath);
-  const date =
-    extractDateFromCompetitionName(competitionName) ??
-    new Date(0).toISOString();
-
-  const writeups: WriteupSummary[] = [];
-
-  for (const categoryName of categoryNames) {
-    const categoryPath = path.join(competitionPath, categoryName);
-    const challengeNames = await listDirectories(categoryPath);
-
-    for (const challengeName of challengeNames) {
-      const challengePath = path.join(categoryPath, challengeName);
-      const readmePath = path.join(challengePath, README_FILE);
-      const content = await readTextFileIfExists(readmePath);
-
-      if (!content) continue;
-
-      const normalizedContent = normalizeText(content);
-      const createdAt = extractDateFromCompetitionName(competitionName) ?? date;
-
-      writeups.push({
-        id: makeStableId(
-          "writeup",
-          competitionName,
-          categoryName,
-          challengeName,
-        ),
-        slug: slugify(`${competitionName}-${categoryName}-${challengeName}`),
-        title: challengeName,
-        excerpt: extractExcerpt(normalizedContent),
-        content: normalizedContent,
-        createdAt,
-        competitionId: makeStableId("competition", competitionName),
-        competitionName,
-        competitionSlug: slugify(competitionName),
-        categoryId: makeStableId("category", categoryName),
-        categoryName,
-        author: {
-          name: extractAuthorName(normalizedContent) ?? DEFAULT_AUTHOR.name,
-        },
-        tags: buildWriteupTags({
-          createdAt,
-          competitionName,
-          categoryName,
-        }),
-        sourcePath: getRelativeSourcePath(challengePath),
-        readmePath: getRelativeSourcePath(readmePath),
-      });
-    }
-  }
-
-  return writeups.sort(compareWriteupsByDateDesc);
+  return bundle.writeups
+    .filter((writeup) => writeup.competitionName === competitionName)
+    .sort(compareWriteupsByDateDesc);
 }
 
 async function loadAllWriteups(): Promise<WriteupSummary[]> {
-  const competitionNames = await loadAllCompetitionNames();
-  const all = await Promise.all(
-    competitionNames.map((competitionName) =>
-      loadWriteupsForCompetition(competitionName),
-    ),
-  );
-
-  return all.flat().sort(compareWriteupsByDateDesc);
+  return [...bundle.writeups].sort(compareWriteupsByDateDesc);
 }
 
 export async function fetchCategoriesFromWriteups(): Promise<
   WriteupCategory[]
 > {
-  const competitions = await loadAllCompetitionNames();
-  const categoryNames = new Set<string>();
+  const categoryNames = uniqueStrings(
+    bundle.writeups.map((writeup) => writeup.categoryName),
+  );
 
-  for (const competitionName of competitions) {
-    const competitionPath = path.join(WRITEUPS_ROOT, competitionName);
-    const names = await listDirectories(competitionPath);
-    names.forEach((name) => categoryNames.add(name));
-  }
-
-  return [...categoryNames]
+  return categoryNames
     .sort((a, b) => a.localeCompare(b))
     .map((name) => ({
       id: makeStableId("category", name),
@@ -378,16 +262,7 @@ export async function fetchCategoriesFromWriteups(): Promise<
 export async function fetchCompetitionsFromWriteups(): Promise<
   WriteupCompetition[]
 > {
-  const competitionNames = await loadAllCompetitionNames();
-  const competitions = await Promise.all(
-    competitionNames.map((competitionName) => loadCompetition(competitionName)),
-  );
-
-  return competitions
-    .filter(
-      (competition): competition is WriteupCompetition => competition !== null,
-    )
-    .sort(compareCompetitionsByDateDesc);
+  return [...bundle.competitions].sort(compareCompetitionsByDateDesc);
 }
 
 export async function fetchAllPostsFromWriteups({
@@ -453,7 +328,7 @@ export async function getPostBySlugFromWriteups(
     ...found,
     solveScript: "",
     competitionPath: getRelativeSourcePath(
-      path.join(WRITEUPS_ROOT, found.competitionName),
+      `${WRITEUPS_ROOT}/${found.competitionName}`,
     ),
     category: found.categoryName,
   };
@@ -471,7 +346,7 @@ export async function getPostByIdFromWriteups(
     ...found,
     solveScript: "",
     competitionPath: getRelativeSourcePath(
-      path.join(WRITEUPS_ROOT, found.competitionName),
+      `${WRITEUPS_ROOT}/${found.competitionName}`,
     ),
     category: found.categoryName,
   };
@@ -731,11 +606,18 @@ export async function getLatestCompetitionsFromWriteups(limit = 100): Promise<
 export async function getAllAssetFilesForWriteup(
   readmePath: string,
 ): Promise<string[]> {
-  const absoluteReadmePath = path.join(process.cwd(), readmePath);
-  const writeupDir = path.dirname(absoluteReadmePath);
-  const files = await listFiles(writeupDir);
+  const allWriteups = await loadAllWriteups();
+  const writeup = allWriteups.find((entry) => entry.readmePath === readmePath);
 
-  return files
-    .filter((file) => file !== README_FILE)
-    .map((file) => getRelativeSourcePath(path.join(writeupDir, file)));
+  if (!writeup) return [];
+
+  const assetMatches = [...writeup.content.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)]
+    .map((match) => (match[1] ?? "").trim())
+    .filter((value) => value && !isExternalOrAnchorUrl(value));
+
+  return uniqueStrings(
+    assetMatches.map((relativePath) =>
+      resolveWriteupAssetUrl(writeup.readmePath, relativePath, "raw"),
+    ),
+  );
 }

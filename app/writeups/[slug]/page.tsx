@@ -28,6 +28,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { resolveWriteupAssetUrl } from "@/lib/writeups";
 
 import SidebarTableOfContents from "@/components/table-of-contents";
 
@@ -303,10 +304,19 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                   ),
                   a: ({ ...props }) => (
                     <a
+                      {...props}
                       className="text-primary no-underline border-b border-dotted border-primary/50 hover:border-primary transition-colors pb-0.5 inline-flex items-center gap-1"
                       target="_blank"
                       rel="noopener noreferrer"
-                      {...props}
+                      href={
+                        typeof props.href === "string"
+                          ? resolveWriteupAssetUrl(
+                              post.readmePath,
+                              props.href,
+                              "blob",
+                            )
+                          : props.href
+                      }
                     >
                       {props.children}
                       <ExternalLink className="h-3 w-3 inline" />
@@ -315,8 +325,17 @@ export default async function WriteupPage({ params }: WriteupPageProps) {
                   img: ({ ...props }) => (
                     <span className="block my-6 rounded-lg overflow-hidden border border-primary/30 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
                       <img
-                        className="max-w-full h-auto rounded-lg"
                         {...props}
+                        src={
+                          typeof props.src === "string"
+                            ? resolveWriteupAssetUrl(
+                                post.readmePath,
+                                props.src,
+                                "raw",
+                              )
+                            : props.src
+                        }
+                        className="max-w-full h-auto rounded-lg"
                       />
                     </span>
                   ),
