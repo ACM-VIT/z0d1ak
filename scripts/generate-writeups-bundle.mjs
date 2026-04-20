@@ -129,14 +129,16 @@ async function fetchRawFile(repoPath) {
 }
 
 async function runWithConcurrency(items, worker, concurrency = 8) {
-  const results = [];
-  const queue = [...items];
+  const results = new Array(items.length);
+  let nextIndex = 0;
 
   const runners = Array.from({ length: Math.max(1, concurrency) }, async () => {
-    while (queue.length > 0) {
-      const item = queue.shift();
-      if (!item) continue;
-      results.push(await worker(item));
+    while (true) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+
+      if (currentIndex >= items.length) break;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
     }
   });
 
@@ -207,6 +209,7 @@ async function generateBundle() {
 
     if (item.kind === "competition") {
       const date = extractDateFromCompetitionName(item.competitionName);
+      const existingCompetition = competitionsMap.get(item.competitionName);
 
       competitionsMap.set(item.competitionName, {
         id: makeStableId("competition", item.competitionName),
@@ -216,9 +219,15 @@ async function generateBundle() {
         readmePath: toRepoRelativePath(item.repoPath),
         readmeContent: item.content,
         date,
-        tags: uniqueStrings([date, item.competitionName]),
-        categories: [],
-        writeupCount: 0,
+        tags: uniqueStrings([
+          ...(existingCompetition?.tags ?? []),
+          date,
+          item.competitionName,
+        ]),
+        categories: [...(existingCompetition?.categories ?? [])].sort((a, b) =>
+          a.localeCompare(b),
+        ),
+        writeupCount: existingCompetition?.writeupCount ?? 0,
       });
       continue;
     }

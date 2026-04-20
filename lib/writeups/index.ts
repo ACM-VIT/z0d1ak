@@ -163,7 +163,10 @@ function isExternalOrAnchorUrl(value: string): boolean {
 }
 
 function normalizePosixPath(pathValue: string): string {
-  const input = pathValue.split("?")[0].split("#")[0];
+  const suffixStart = pathValue.search(/[?#]/);
+  const input =
+    suffixStart >= 0 ? pathValue.slice(0, suffixStart) : pathValue;
+  const suffix = suffixStart >= 0 ? pathValue.slice(suffixStart) : "";
   const parts = input.split("/");
   const stack: string[] = [];
 
@@ -176,7 +179,7 @@ function normalizePosixPath(pathValue: string): string {
     stack.push(part);
   }
 
-  return stack.join("/");
+  return `${stack.join("/")}${suffix}`;
 }
 
 export function resolveWriteupAssetUrl(
