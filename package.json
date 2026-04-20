@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "git submodule update --init --remote z0d1ak-writeups && next build",
+    "build": "node ./scripts/generate-writeups-bundle.mjs && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "writeups:bundle": "node ./scripts/generate-writeups-bundle.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",

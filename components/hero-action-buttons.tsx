@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Terminal, Users } from "lucide-react";
+import { FileText, Terminal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -25,14 +25,15 @@ export function HeroActionButtons({
         </Button>
       </Link>
 
-      <Link href="/members" className={widthClassName}>
-        <Button
-          variant="outline"
-          size="lg"
-          className={`${widthClassName} border-primary/50 text-primary hover:bg-primary/10`}
-        >
-          <Users className="h-4 w-4" />
-          Meet the Members
+      <Link
+        href="https://tally.so/r/PdlK75"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={widthClassName}
+      >
+        <Button variant="hacker" size="lg" className={widthClassName}>
+          <Terminal className="h-4 w-4" />
+          Apply
         </Button>
       </Link>
     </div>
